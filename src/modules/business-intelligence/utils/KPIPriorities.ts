@@ -1,0 +1,13 @@
+export const KPIPriorities={
+
+CRITICAL:1,
+
+HIGH:2,
+
+MEDIUM:3,
+
+LOW:4,
+
+INFO:5,
+
+};

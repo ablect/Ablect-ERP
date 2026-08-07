@@ -1,0 +1,63 @@
+import Card
+
+from "../../../components/ui/Card";
+
+import {
+
+useExpenses
+
+}
+
+from "../hooks/useExpenses";
+
+export default function ExpenseSummary(){
+
+const{
+
+expenses,
+
+}=
+
+useExpenses();
+
+const total=
+
+expenses.reduce(
+
+(sum,expense)=>
+
+sum+
+
+expense.amount,
+
+0,
+
+);
+
+return(
+
+<Card>
+
+<h2 className="text-lg font-semibold">
+
+Expense Summary
+
+</h2>
+
+<p>
+
+Total:
+
+{" "}
+
+₦
+
+{total.toLocaleString()}
+
+</p>
+
+</Card>
+
+);
+
+}

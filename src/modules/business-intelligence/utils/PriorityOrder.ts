@@ -1,0 +1,11 @@
+export const PriorityOrder={
+
+critical:1,
+
+high:2,
+
+medium:3,
+
+low:4,
+
+};

@@ -1,0 +1,3 @@
+export { default as PurchasePage }
+
+from "./pages/PurchasePage";

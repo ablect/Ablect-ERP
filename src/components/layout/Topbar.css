@@ -1,0 +1,27 @@
+.topbar{
+
+height:70px;
+
+background:white;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:0 30px;
+
+border-bottom:1px solid #E2E8F0;
+
+}
+
+.topbar-actions{
+
+display:flex;
+
+gap:20px;
+
+align-items:center;
+
+}

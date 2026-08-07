@@ -1,0 +1,15 @@
+.ab-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.ab-btn:hover {
+  background: #1d4ed8;
+}
