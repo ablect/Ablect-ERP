@@ -1,33 +1,48 @@
 import type { Customer } from "../types/Customer";
 
 import {
-
-CustomerMemoryRepository
-
-}
-
-from "../repositories/CustomerMemoryRepository";
+  CustomerMemoryRepository,
+} from "../repositories/CustomerMemoryRepository";
 
 const repository =
-
-new CustomerMemoryRepository();
+  new CustomerMemoryRepository();
 
 export const customerService = {
+  async getAll(): Promise<Customer[]> {
+    return repository.getAll();
+  },
 
-getAll() {
+  async getById(
+    id: string,
+  ): Promise<Customer | undefined> {
+    return repository.getById(id);
+  },
 
-return repository.getAll();
+  async create(
+    customer: Customer,
+  ): Promise<Customer[]> {
+    await repository.create(
+      customer,
+    );
 
-},
+    return repository.getAll();
+  },
 
-create(
+  async update(
+    updated: Customer,
+  ): Promise<Customer[]> {
+    await repository.update(
+      updated,
+    );
 
-customer: Customer
+    return repository.getAll();
+  },
 
-) {
+  async delete(
+    id: string,
+  ): Promise<Customer[]> {
+    await repository.delete(id);
 
-return repository.create(customer);
-
-},
-
+    return repository.getAll();
+  },
 };

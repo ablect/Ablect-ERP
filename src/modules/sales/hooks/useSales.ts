@@ -1,13 +1,11 @@
-import {
+import { useSalesStore } from "../store/SalesStore";
 
-useSalesStore
+export function useSales() {
+  const sales = useSalesStore(
+    (state) => state.sales
+  );
 
-}
-
-from "../store/SalesStore";
-
-export function useSales(){
-
-return useSalesStore();
-
+  return {
+    sales,
+  };
 }

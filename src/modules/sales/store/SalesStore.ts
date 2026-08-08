@@ -1,41 +1,63 @@
 import { create } from "zustand";
+
 import type { Sale } from "../types/Sale";
 
 type SalesState = {
-
   sales: Sale[];
 
-  setSales: (sales: Sale[]) => void;
+  setSales: (
+    sales: Sale[]
+  ) => void;
 
-  addSale: (sale: Sale) => void;
+  addSale: (
+    sale: Sale
+  ) => void;
 
+  updateSale: (
+    sale: Sale
+  ) => void;
+
+  removeSale: (
+    id: string
+  ) => void;
 };
 
 export const useSalesStore =
-create<SalesState>((set, get) => ({
+  create<SalesState>((set) => ({
+    sales: [],
 
-  sales: [],
+    setSales(sales) {
+      set({
+        sales,
+      });
+    },
 
-  setSales(sales) {
+    addSale(sale) {
+      set((state) => ({
+        sales: [
+          ...state.sales,
+          sale,
+        ],
+      }));
+    },
 
-    set({ sales });
+    updateSale(sale) {
+      set((state) => ({
+        sales: state.sales.map(
+          (existingSale) =>
+            existingSale.id === sale.id
+              ? sale
+              : existingSale
+        ),
+      }));
+    },
 
-  },
-
-  addSale(sale) {
-
-    set({
-
-      sales: [
-
-        ...get().sales,
-
-        sale,
-
-      ],
-
-    });
-
-  },
-
-}));
+    removeSale(id) {
+      set((state) => ({
+        sales: state.sales.filter(
+          (sale) =>
+            sale.id !== id
+        ),
+      }));
+    },
+  }));

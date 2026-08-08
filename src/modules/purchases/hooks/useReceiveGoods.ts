@@ -1,65 +1,32 @@
 import {
-
-goodsReceivedNoteService
-
-}
-
-from "../services/GoodsReceivedNoteService";
+  goodsReceivedNoteService,
+} from "../services/GoodsReceivedNoteService";
 
 import {
+  useGoodsReceivedNoteStore,
+} from "../store/GoodsReceivedNoteStore";
 
-useGoodsReceivedNoteStore
+import type { GoodsReceivedNote } from "../types/GoodsReceivedNote";
 
-}
+export function useReceiveGoods() {
+  async function receive(id: string) {
+    const notes = await goodsReceivedNoteService.getAll();
 
-from "../store/GoodsReceivedNoteStore";
+    const updated: GoodsReceivedNote[] = notes.map((note): GoodsReceivedNote =>
+      note.id === id
+        ? {
+            ...note,
+            status: "Received",
+          }
+        : note
+    );
 
-export function useReceiveGoods(){
+    useGoodsReceivedNoteStore
+      .getState()
+      .setNotes(updated);
+  }
 
-async function receive(
-
-id:string,
-
-){
-
-const notes=
-
-await goodsReceivedNoteService.getAll();
-
-const updated=
-
-notes.map(note=>
-
-note.id===id
-
-?{
-
-...note,
-
-status:"Received",
-
-}
-
-:note
-
-);
-
-useGoodsReceivedNoteStore
-
-.getState()
-
-.setNotes(
-
-updated,
-
-);
-
-}
-
-return{
-
-receive,
-
-};
-
+  return {
+    receive,
+  };
 }

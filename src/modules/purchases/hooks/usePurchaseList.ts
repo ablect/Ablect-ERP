@@ -1,25 +1,9 @@
-import {
+import { usePurchaseStore } from "../store/PurchaseStore";
 
-usePurchaseStore
+export function usePurchaseList() {
+  const { orders } = usePurchaseStore();
 
-}
-
-from "../store/PurchaseStore";
-
-export function usePurchaseList(){
-
-const{
-
-purchases,
-
-}=
-
-usePurchaseStore();
-
-return{
-
-purchases,
-
-};
-
+  return {
+    purchases: orders,
+  };
 }

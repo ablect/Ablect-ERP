@@ -1,77 +1,36 @@
-import type {
+import type { Purchase } from "../types/Purchase";
 
-PurchaseOrder
+let purchases: Purchase[] = [];
 
-}
+export const purchaseService = {
+  async getAll() {
+    return purchases;
+  },
 
-from "../types/PurchaseOrder";
+  async create(purchase: Purchase) {
+    purchases = [
+      ...purchases,
+      purchase,
+    ];
 
-let orders:PurchaseOrder[]=[];
+    return purchases;
+  },
 
-export const purchaseService={
+  async update(updated: Purchase) {
+    purchases = purchases.map((purchase) =>
+      purchase.id === updated.id
+        ? updated
+        : purchase
+    );
 
-async getAll(){
+    return purchases;
+  },
 
-return orders;
+  async delete(id: string) {
+    purchases = purchases.filter(
+      (purchase) => purchase.id !== id
+    );
 
-},
-
-async create(
-
-order:PurchaseOrder,
-
-){
-
-orders=[
-
-...orders,
-
-order,
-
-];
-
-return orders;
-
-},
-
-async update(
-
-updated:PurchaseOrder,
-
-){
-
-orders=
-
-orders.map(order=>
-
-order.id===updated.id
-
-?updated
-
-:order
-
-);
-
-return orders;
-
-},
-
-async delete(
-
-id:string,
-
-){
-
-orders=
-
-orders.filter(order=>
-
-order.id!==id
-
-);
-
-return orders;
-
-},
-
+    return purchases;
+  },
 };

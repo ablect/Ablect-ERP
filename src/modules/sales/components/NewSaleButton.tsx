@@ -1,15 +1,18 @@
 import Button from "../../../components/ui/Button";
 
-export default function NewSaleButton() {
+type Props = {
+  onClick: () => void;
+};
 
+export default function NewSaleButton({
+  onClick,
+}: Props) {
   return (
-
-    <Button>
-
+    <Button
+      type="button"
+      onClick={onClick}
+    >
       New Sale
-
     </Button>
-
   );
-
 }

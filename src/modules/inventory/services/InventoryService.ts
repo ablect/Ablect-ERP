@@ -1,57 +1,147 @@
 import type {
+  InventoryItem,
+} from "../types/InventoryItem";
 
-InventoryItem
+let items: InventoryItem[] = [];
 
+function getStockStatus(
+  quantity: number,
+  reorderLevel: number,
+): InventoryItem["status"] {
+  if (quantity <= 0) {
+    return "Out of Stock";
+  }
+
+  if (quantity <= reorderLevel) {
+    return "Low Stock";
+  }
+
+  return "In Stock";
 }
 
-from "../types/InventoryItem";
+export const inventoryService = {
+  async getAll(): Promise<InventoryItem[]> {
+    return [...items];
+  },
 
-let items:InventoryItem[]=[];
+  async create(
+    item: InventoryItem,
+  ): Promise<InventoryItem[]> {
+    items = [
+      ...items,
+      item,
+    ];
 
-export const inventoryService={
+    return [...items];
+  },
 
-async getAll(){
+  async update(
+    updated: InventoryItem,
+  ): Promise<InventoryItem[]> {
+    items = items.map((item) =>
+      item.id === updated.id
+        ? updated
+        : item,
+    );
 
-return items;
+    return [...items];
+  },
 
-},
+  async delete(
+    id: string,
+  ): Promise<InventoryItem[]> {
+    items = items.filter(
+      (item) => item.id !== id,
+    );
 
-async create(
+    return [...items];
+  },
 
-item:InventoryItem,
+  async receiveStock(
+    productId: string,
+    quantity: number,
+  ): Promise<InventoryItem[]> {
+    if (quantity <= 0) {
+      throw new Error(
+        "Stock quantity must be greater than zero.",
+      );
+    }
 
-){
+    const product = items.find(
+      (item) => item.id === productId,
+    );
 
-items=[
+    if (!product) {
+      throw new Error(
+        "Product not found in inventory.",
+      );
+    }
 
-...items,
+    items = items.map((item) => {
+      if (item.id !== productId) {
+        return item;
+      }
 
-item,
+      const newQuantity =
+        item.quantity + quantity;
 
-];
+      return {
+        ...item,
+        quantity: newQuantity,
+        status: getStockStatus(
+          newQuantity,
+          item.reorderLevel,
+        ),
+      };
+    });
 
-return items;
+    return [...items];
+  },
 
-},
+  async issueStock(
+    productId: string,
+    quantity: number,
+  ): Promise<InventoryItem[]> {
+    if (quantity <= 0) {
+      throw new Error(
+        "Stock quantity must be greater than zero.",
+      );
+    }
 
-async delete(
+    const product = items.find(
+      (item) => item.id === productId,
+    );
 
-id:string,
+    if (!product) {
+      throw new Error(
+        "Product not found in inventory.",
+      );
+    }
 
-){
+    if (product.quantity < quantity) {
+      throw new Error(
+        `Insufficient stock for ${product.itemName}. Available: ${product.quantity}.`,
+      );
+    }
 
-items=
+    items = items.map((item) => {
+      if (item.id !== productId) {
+        return item;
+      }
 
-items.filter(
+      const newQuantity =
+        item.quantity - quantity;
 
-item=>
+      return {
+        ...item,
+        quantity: newQuantity,
+        status: getStockStatus(
+          newQuantity,
+          item.reorderLevel,
+        ),
+      };
+    });
 
-item.id!==id,
-
-);
-
-return items;
-
-},
-
+    return [...items];
+  },
 };

@@ -1,83 +1,40 @@
 import {
-
-createPurchaseOrder
-
-}
-
-from "../utils/createPurchaseOrder";
+  createPurchaseOrder,
+} from "../utils/createPurchaseOrder";
 
 import {
-
-purchaseService
-
-}
-
-from "../services/PurchaseService";
+  purchaseOrderService,
+} from "../services/PurchaseOrderService";
 
 import {
+  usePurchaseStore,
+} from "../store/PurchaseStore";
 
-usePurchaseStore
+export function useCreatePurchaseOrder() {
+  async function create(
+    poNumber: string,
+    supplierId: string,
+    orderDate: string,
+    expectedDate: string,
+    total: number,
+  ) {
+    const order = createPurchaseOrder(
+      poNumber,
+      supplierId,
+      orderDate,
+      expectedDate,
+      total,
+    );
 
-}
+    const orders =
+      await purchaseOrderService.create(order);
 
-from "../store/PurchaseStore";
+    usePurchaseStore
+      .getState()
+      .setOrders(orders);
+  }
 
-export function useCreatePurchaseOrder(){
-
-async function create(
-
-poNumber:string,
-
-supplierId:string,
-
-orderDate:string,
-
-expectedDate:string,
-
-total:number,
-
-){
-
-const purchase=
-
-createPurchaseOrder(
-
-poNumber,
-
-supplierId,
-
-orderDate,
-
-expectedDate,
-
-total,
-
-);
-
-const orders=
-
-await purchaseService.create(
-
-purchase,
-
-);
-
-usePurchaseStore
-
-.getState()
-
-.setOrders(
-
-orders,
-
-);
-
-}
-
-return{
-
-create,
-
-};
-
+  return {
+    create,
+  };
 }

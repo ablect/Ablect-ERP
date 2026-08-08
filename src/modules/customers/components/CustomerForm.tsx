@@ -1,103 +1,156 @@
-import Form from "../../../components/ui/Form";
-import Card from "../../../components/ui/Card";
+import { useState } from "react";
+
 import Button from "../../../components/ui/Button";
+import Card from "../../../components/ui/Card";
 
-import {
+import { useCreateCustomer } from "../hooks/useCreateCustomer";
 
-useCustomerForm
+type Props = {
+  onCreated?: () => void;
+};
 
-}
+export default function CustomerForm({
+  onCreated,
+}: Props) {
+  const { create } =
+    useCreateCustomer();
 
-from "../hooks/useCustomerForm";
+  const [name, setName] =
+    useState("");
 
-import {
+  const [email, setEmail] =
+    useState("");
 
-createCustomer
+  const [phone, setPhone] =
+    useState("");
 
-}
+  const [address, setAddress] =
+    useState("");
 
-from "../utils/createCustomer";
+  const [saving, setSaving] =
+    useState(false);
 
-import {
+  const [error, setError] =
+    useState("");
 
-customerService
+  async function save() {
+    setError("");
 
-}
+    if (!name.trim()) {
+      setError(
+        "Customer name is required.",
+      );
+      return;
+    }
 
-from "../services/CustomerService";
+    if (!phone.trim()) {
+      setError(
+        "Customer phone is required.",
+      );
+      return;
+    }
 
-import {
+    try {
+      setSaving(true);
 
-useCustomerStore
+      await create(
+        name,
+        email,
+        phone,
+        address,
+      );
 
-}
+      setName("");
+      setEmail("");
+      setPhone("");
+      setAddress("");
 
-from "../store/CustomerStore";
+      onCreated?.();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to create customer.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
-import CustomerBasicInformation
+  return (
+    <Card>
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-xl font-semibold">
+            New Customer
+          </h2>
 
-from "./CustomerBasicInformation";
+          <p className="text-sm text-slate-500">
+            Add a customer to the system.
+          </p>
+        </div>
 
-export default function CustomerForm(){
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
-const form=
+        <div className="grid gap-4 md:grid-cols-2">
+          <input
+            className="rounded-lg border p-3"
+            placeholder="Customer Name"
+            value={name}
+            onChange={(e) =>
+              setName(e.target.value)
+            }
+            disabled={saving}
+          />
 
-useCustomerForm();
+          <input
+            className="rounded-lg border p-3"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+            disabled={saving}
+          />
 
-async function submit(data:any){
+          <input
+            className="rounded-lg border p-3"
+            placeholder="Phone"
+            value={phone}
+            onChange={(e) =>
+              setPhone(e.target.value)
+            }
+            disabled={saving}
+          />
 
-const customer=
+          <input
+            className="rounded-lg border p-3"
+            placeholder="Address"
+            value={address}
+            onChange={(e) =>
+              setAddress(e.target.value)
+            }
+            disabled={saving}
+          />
+        </div>
 
-createCustomer(data);
-
-const customers=
-
-await customerService.create(customer);
-
-useCustomerStore
-
-.getState()
-
-.setCustomers(customers);
-
-form.reset();
-
-}
-
-return(
-
-<Form
-
-onSubmit={form.handleSubmit(submit)}
-
->
-
-<Card>
-
-<div className="space-y-6">
-
-<CustomerBasicInformation
-
-register={form.register}
-
-/>
-
-<Button
-
-type="submit"
-
->
-
-Save Customer
-
-</Button>
-
-</div>
-
-</Card>
-
-</Form>
-
-);
-
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            onClick={save}
+            disabled={saving}
+          >
+            {saving
+              ? "Saving..."
+              : "Save Customer"}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
 }

@@ -1,94 +1,25 @@
-import { useInventoryStore }
-from "../../inventory/store/InventoryStore";
+import {
+  inventoryService,
+} from "../../inventory/services/InventoryService";
 
 export const inventoryStockService = {
-
-  increase(
-
+  async increase(
     productId: string,
-
     quantity: number,
-
   ) {
-
-    const {
-
-      products,
-
-      setProducts,
-
-    } = useInventoryStore.getState();
-
-    const updated = products.map(product => {
-
-      if (product.id !== productId) {
-
-        return product;
-
-      }
-
-      return {
-
-        ...product,
-
-        quantity:
-
-          product.quantity +
-
-          quantity,
-
-      };
-
-    });
-
-    setProducts(updated);
-
+    return inventoryService.receiveStock(
+      productId,
+      quantity,
+    );
   },
 
-  decrease(
-
+  async decrease(
     productId: string,
-
     quantity: number,
-
   ) {
-
-    const {
-
-      products,
-
-      setProducts,
-
-    } = useInventoryStore.getState();
-
-    const updated = products.map(product => {
-
-      if (product.id !== productId) {
-
-        return product;
-
-      }
-
-      return {
-
-        ...product,
-
-        quantity: Math.max(
-
-          0,
-
-          product.quantity -
-
-          quantity,
-
-        ),
-
-      };
-
-    });
-
-    setProducts(updated);
-
+    return inventoryService.issueStock(
+      productId,
+      quantity,
+    );
   },
-
 };

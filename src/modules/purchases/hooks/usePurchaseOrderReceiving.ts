@@ -1,65 +1,39 @@
 import {
-
-purchaseService
-
-}
-
-from "../services/PurchaseService";
+  purchaseOrderService,
+} from "../services/PurchaseOrderService";
 
 import {
+  usePurchaseStore,
+} from "../store/PurchaseStore";
 
-usePurchaseStore
+import type {
+  PurchaseOrder,
+} from "../types/PurchaseOrder";
 
-}
+export function usePurchaseOrderReceiving() {
+  async function receive(
+    purchaseOrderId: string,
+  ) {
+    const orders =
+      await purchaseOrderService.getAll();
 
-from "../store/PurchaseStore";
+    const updated: PurchaseOrder[] =
+      orders.map(
+        (order): PurchaseOrder =>
+          order.id === purchaseOrderId
+            ? {
+                ...order,
+                status: "Received",
+              }
+            : order
+      );
 
-export function usePurchaseOrderReceiving(){
+    usePurchaseStore
+      .getState()
+      .setOrders(updated);
+  }
 
-async function receive(
-
-purchaseOrderId:string,
-
-){
-
-const orders=
-
-await purchaseService.getAll();
-
-const updated=
-
-orders.map(order=>
-
-order.id===purchaseOrderId
-
-?{
-
-...order,
-
-status:"Received",
-
-}
-
-:order
-
-);
-
-usePurchaseStore
-
-.getState()
-
-.setOrders(
-
-updated,
-
-);
-
-}
-
-return{
-
-receive,
-
-};
-
+  return {
+    receive,
+  };
 }

@@ -11,6 +11,9 @@ import {
   Briefcase,
   Building2,
   Boxes,
+  UserRoundSearch,
+  Target,
+  CalendarCheck,
   ClipboardList,
   UserCog,
   DollarSign,
@@ -103,7 +106,20 @@ export default function Sidebar() {
         Suppliers
 
       </NavLink>
+<NavLink to="/crm">
+  <UserRoundSearch size={18} />
+  CRM
+</NavLink>
 
+<NavLink to="/crm/opportunities">
+  <Target size={18} />
+  Opportunities
+</NavLink>
+
+<NavLink to="/crm/activities">
+  <CalendarCheck size={18} />
+  Activities
+</NavLink>
       <NavLink to="/reports">
 
         <BarChart3 size={18} />

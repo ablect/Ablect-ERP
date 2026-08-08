@@ -1,13 +1,5 @@
-import {
+import { useInventoryStore } from "../store/InventoryStore";
 
-useInventoryStore
-
-}
-
-from "../store/InventoryStore";
-
-export function useInventory(){
-
-return useInventoryStore();
-
+export function useInventory() {
+  return useInventoryStore();
 }
