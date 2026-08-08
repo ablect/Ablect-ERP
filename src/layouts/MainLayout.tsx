@@ -36,6 +36,7 @@ export default function MainLayout({ children }: Props) {
         collapsed={collapsed}
         mobileOpen={mobileOpen}
         onNavigate={closeMobileSidebar}
+        onToggle={toggleSidebar}
       />
 
       {mobileOpen && (
@@ -49,7 +50,6 @@ export default function MainLayout({ children }: Props) {
 
       <div className="layout-body">
         <Topbar onMenuClick={toggleSidebar} />
-
         <main className="layout-content">{children}</main>
       </div>
     </div>
