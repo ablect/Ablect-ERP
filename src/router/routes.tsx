@@ -1,228 +1,63 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
+import ProtectedRoute from "../auth/ProtectedRoute";
+import LoginPage from "../pages/LoginPage";
 
-// Dashboard
 import Dashboard from "../pages/Dashboard";
-
-// Products
 import ProductPage from "../pages/ProductPage";
-
-// Customers
 import CustomersPage from "../pages/Customers";
-
-// Suppliers
 import SuppliersPage from "../pages/Suppliers";
-
-// Reports
 import ReportsPage from "../pages/Reports";
-
-// Settings
 import SettingsPage from "../pages/Settings";
 
-// Inventory
 import InventoryPage from "../modules/inventory/pages/InventoryPage";
-
-// Sales
 import SalesPage from "../modules/sales/pages/SalesPage";
-
-// Purchases
 import PurchasePage from "../modules/purchases/pages/PurchasePage";
 import GoodsReceivedNotePage from "../modules/purchases/pages/GoodsReceivedNotePage";
 import PurchaseRequisitionPage from "../modules/purchases/pages/PurchaseRequisitionPage";
-
-// Warehouse
 import WarehousePage from "../modules/warehouse/pages/WarehousePage";
-
-// Stock
 import PayrollPage from "../modules/payroll/components/PayrollPage";
 import StockMovementPage from "../modules/stock/pages/StockMovementPage";
-
-// CRM
 import CRMDashboardPage from "../modules/crm/pages/CRMDashboardPage";
 import OpportunityPage from "../modules/crm/pages/OpportunityPage";
 import UserPage from "../modules/users/pages/UserPage";
 import EmployeePage from "../modules/hr/pages/EmployeePage";
 
+function ProtectedPage({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <MainLayout>{children}</MainLayout>
+    </ProtectedRoute>
+  );
+}
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-{/* Payroll */}
-<Route
-  path="/payroll"
-  element={
-    <MainLayout>
-      <PayrollPage />
-    </MainLayout>
-  }
-/>
-{/* Users */}
-<Route
-  path="/users"
-  element={
-    <MainLayout>
-      <UserPage />
-    </MainLayout>
-  }
-/>
+        <Route path="/login" element={<LoginPage />} />
 
-{/* HR */}
-<Route
-  path="/hr"
-  element={
-    <MainLayout>
-      <EmployeePage />
-    </MainLayout>
-  }
-/>
-        {/* Dashboard */}
-        <Route
-          path="/"
-          element={
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          }
-        />
+        <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+        <Route path="/inventory" element={<ProtectedPage><InventoryPage /></ProtectedPage>} />
+        <Route path="/products" element={<ProtectedPage><ProductPage /></ProtectedPage>} />
+        <Route path="/sales" element={<ProtectedPage><SalesPage /></ProtectedPage>} />
+        <Route path="/purchases" element={<ProtectedPage><PurchasePage /></ProtectedPage>} />
+        <Route path="/purchases/goods-received" element={<ProtectedPage><GoodsReceivedNotePage /></ProtectedPage>} />
+        <Route path="/purchases/requisitions" element={<ProtectedPage><PurchaseRequisitionPage /></ProtectedPage>} />
+        <Route path="/customers" element={<ProtectedPage><CustomersPage /></ProtectedPage>} />
+        <Route path="/suppliers" element={<ProtectedPage><SuppliersPage /></ProtectedPage>} />
+        <Route path="/warehouse" element={<ProtectedPage><WarehousePage /></ProtectedPage>} />
+        <Route path="/stock" element={<ProtectedPage><StockMovementPage /></ProtectedPage>} />
+        <Route path="/reports" element={<ProtectedPage><ReportsPage /></ProtectedPage>} />
+        <Route path="/settings" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />
+        <Route path="/crm" element={<ProtectedPage><CRMDashboardPage /></ProtectedPage>} />
+        <Route path="/crm/opportunities" element={<ProtectedPage><OpportunityPage /></ProtectedPage>} />
+        <Route path="/users" element={<ProtectedPage><UserPage /></ProtectedPage>} />
+        <Route path="/hr" element={<ProtectedPage><EmployeePage /></ProtectedPage>} />
+        <Route path="/payroll" element={<ProtectedPage><PayrollPage /></ProtectedPage>} />
 
-        {/* Inventory */}
-        <Route
-          path="/inventory"
-          element={
-            <MainLayout>
-              <InventoryPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Products */}
-        <Route
-          path="/products"
-          element={
-            <MainLayout>
-              <ProductPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Sales */}
-        <Route
-          path="/sales"
-          element={
-            <MainLayout>
-              <SalesPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Purchases */}
-        <Route
-          path="/purchases"
-          element={
-            <MainLayout>
-              <PurchasePage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/purchases/goods-received"
-          element={
-            <MainLayout>
-              <GoodsReceivedNotePage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/purchases/requisitions"
-          element={
-            <MainLayout>
-              <PurchaseRequisitionPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Customers */}
-        <Route
-          path="/customers"
-          element={
-            <MainLayout>
-              <CustomersPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Suppliers */}
-        <Route
-          path="/suppliers"
-          element={
-            <MainLayout>
-              <SuppliersPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Warehouse */}
-        <Route
-          path="/warehouse"
-          element={
-            <MainLayout>
-              <WarehousePage />
-            </MainLayout>
-          }
-        />
-
-        {/* Stock */}
-        <Route
-          path="/stock"
-          element={
-            <MainLayout>
-              <StockMovementPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Reports */}
-        <Route
-          path="/reports"
-          element={
-            <MainLayout>
-              <ReportsPage />
-            </MainLayout>
-          }
-        />
-
-        {/* Settings */}
-        <Route
-          path="/settings"
-          element={
-            <MainLayout>
-              <SettingsPage />
-            </MainLayout>
-          }
-        />
-
-        {/* CRM */}
-        <Route
-          path="/crm"
-          element={
-            <MainLayout>
-              <CRMDashboardPage />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/crm/opportunities"
-          element={
-            <MainLayout>
-              <OpportunityPage />
-            </MainLayout>
-          }
-        />
-
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
