@@ -20,6 +20,8 @@ import {
   Users,
   Warehouse,
 } from "lucide-react";
+
+import { playUiSound } from "../../utils/uiSound";
 import "./Sidebar.css";
 
 type Props = {
@@ -76,7 +78,10 @@ function NavigationGroup({
           to={to}
           end={to === "/"}
           title={collapsed ? label : undefined}
-          onClick={onNavigate}
+          onClick={() => {
+            playUiSound("click");
+            onNavigate();
+          }}
           className={({ isActive }) =>
             `sidebar-link ${isActive ? "active" : ""}`
           }
@@ -111,32 +116,23 @@ export default function Sidebar({
 
       <div className="sidebar-scroll">
         <div className="sidebar-section-label">Workspace</div>
-        <NavigationGroup
-          items={primaryItems}
-          collapsed={collapsed}
-          onNavigate={onNavigate}
-        />
+        <NavigationGroup items={primaryItems} collapsed={collapsed} onNavigate={onNavigate} />
 
         <div className="sidebar-section-label">Operations</div>
-        <NavigationGroup
-          items={operationsItems}
-          collapsed={collapsed}
-          onNavigate={onNavigate}
-        />
+        <NavigationGroup items={operationsItems} collapsed={collapsed} onNavigate={onNavigate} />
 
         <div className="sidebar-section-label">Business</div>
-        <NavigationGroup
-          items={businessItems}
-          collapsed={collapsed}
-          onNavigate={onNavigate}
-        />
+        <NavigationGroup items={businessItems} collapsed={collapsed} onNavigate={onNavigate} />
 
         <div className="sidebar-section-label">Analytics</div>
         <nav className="sidebar-nav">
           <NavLink
             to="/reports"
             title={collapsed ? "Reports" : undefined}
-            onClick={onNavigate}
+            onClick={() => {
+              playUiSound("click");
+              onNavigate();
+            }}
             className={({ isActive }) =>
               `sidebar-link ${isActive ? "active" : ""}`
             }
@@ -151,7 +147,10 @@ export default function Sidebar({
         <NavLink
           to="/settings"
           title={collapsed ? "Settings" : undefined}
-          onClick={onNavigate}
+          onClick={() => {
+            playUiSound("click");
+            onNavigate();
+          }}
           className={({ isActive }) =>
             `sidebar-link ${isActive ? "active" : ""}`
           }
@@ -163,7 +162,10 @@ export default function Sidebar({
         <button
           type="button"
           className="sidebar-collapse"
-          onClick={onToggle}
+          onClick={() => {
+            playUiSound("click");
+            onToggle();
+          }}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
