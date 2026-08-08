@@ -1,23 +1,25 @@
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
-
 import {
-  Package,
-  Warehouse,
-  ShoppingCart,
-  Truck,
+  ArrowRight,
   BarChart3,
-  Settings,
-  Users,
   Boxes,
   Building2,
-  ClipboardList,
-  DollarSign,
-  CreditCard,
-  UserRoundSearch,
-  Target,
   CalendarCheck,
+  ClipboardList,
+  CreditCard,
+  DollarSign,
+  Package,
+  Settings,
+  ShoppingCart,
+  Sparkles,
+  Target,
+  Truck,
+  UserRoundSearch,
+  Users,
+  Warehouse,
 } from "lucide-react";
+import "./Dashboard.css";
 
 type DashboardModule = {
   title: string;
@@ -27,164 +29,71 @@ type DashboardModule = {
 };
 
 const modules: DashboardModule[] = [
-  {
-    title: "Inventory",
-    desc: "Products, Brands, Categories",
-    icon: Warehouse,
-    link: "/inventory",
-  },
-  {
-    title: "Products",
-    desc: "Manage Products",
-    icon: Package,
-    link: "/products",
-  },
-  {
-    title: "Sales",
-    desc: "Sales & POS",
-    icon: ShoppingCart,
-    link: "/sales",
-  },
-  {
-    title: "Purchases",
-    desc: "Purchase Orders",
-    icon: ClipboardList,
-    link: "/purchases",
-  },
-  {
-    title: "Suppliers",
-    desc: "Supplier Management",
-    icon: Truck,
-    link: "/suppliers",
-  },
-  {
-    title: "Customers",
-    desc: "Customer Database",
-    icon: Users,
-    link: "/customers",
-  },
-  {
-    title: "Warehouse",
-    desc: "Warehouse Control",
-    icon: Building2,
-    link: "/warehouse",
-  },
-  {
-    title: "Stock",
-    desc: "Stock Transfers",
-    icon: Boxes,
-    link: "/stock",
-  },
-  {
-    title: "Reports",
-    desc: "Business Reports",
-    icon: BarChart3,
-    link: "/reports",
-  },
-  {
-    title: "HR",
-    desc: "Human Resources",
-    icon: Users,
-    link: "/hr",
-  },
-  {
-    title: "Payroll",
-    desc: "Salary Processing",
-    icon: DollarSign,
-    link: "/payroll",
-  },
-  {
-    title: "Accounting",
-    desc: "Finance",
-    icon: CreditCard,
-    link: "/accounting",
-  },
-  {
-    title: "CRM",
-    desc: "Customer Relationship Management",
-    icon: UserRoundSearch,
-    link: "/crm",
-  },
-  {
-    title: "Opportunities",
-    desc: "Sales Pipeline",
-    icon: Target,
-    link: "/crm/opportunities",
-  },
-  {
-    title: "Activities",
-    desc: "Calls, Meetings & Follow-ups",
-    icon: CalendarCheck,
-    link: "/crm/activities",
-  },
-  {
-    title: "Settings",
-    desc: "Application Settings",
-    icon: Settings,
-    link: "/settings",
-  },
-  {
-  title: "Users",
-  desc: "System User Management",
-  icon: Users,
-  link: "/users",
-},
-{
-  title: "HR",
-  desc: "Human Resources",
-  icon: Users,
-  link: "/hr",
-},
-{
-  title: "Payroll",
-  desc: "Salary Processing",
-  icon: DollarSign,
-  link: "/payroll",
-},
+  { title: "Sales", desc: "POS, invoices and customer orders", icon: ShoppingCart, link: "/sales" },
+  { title: "Inventory", desc: "Stock levels and replenishment", icon: Warehouse, link: "/inventory" },
+  { title: "Products", desc: "Items, pricing and catalog", icon: Package, link: "/products" },
+  { title: "Customers", desc: "Customer records and history", icon: Users, link: "/customers" },
+  { title: "Purchases", desc: "Orders and procurement workflow", icon: ClipboardList, link: "/purchases" },
+  { title: "Suppliers", desc: "Supplier records and management", icon: Truck, link: "/suppliers" },
+  { title: "Warehouse", desc: "Locations and warehouse control", icon: Building2, link: "/warehouse" },
+  { title: "Stock", desc: "Movements, adjustments and transfers", icon: Boxes, link: "/stock" },
+  { title: "Reports", desc: "Business performance and analytics", icon: BarChart3, link: "/reports" },
+  { title: "CRM", desc: "Relationships and customer activity", icon: UserRoundSearch, link: "/crm" },
+  { title: "Opportunities", desc: "Pipeline and sales opportunities", icon: Target, link: "/crm/opportunities" },
+  { title: "Activities", desc: "Calls, meetings and follow-ups", icon: CalendarCheck, link: "/crm/activities" },
+  { title: "Users", desc: "System access and permissions", icon: Users, link: "/users" },
+  { title: "HR", desc: "Employees and workforce management", icon: Users, link: "/hr" },
+  { title: "Payroll", desc: "Salary processing and payroll", icon: DollarSign, link: "/payroll" },
+  { title: "Accounting", desc: "Finance and accounting workspace", icon: CreditCard, link: "/accounting" },
+  { title: "Settings", desc: "Configure your business suite", icon: Settings, link: "/settings" },
 ];
 
 export default function Dashboard() {
   return (
-    <div style={{ padding: 30 }}>
-      <h1>ABLECT BUSINESS SUITE ERP</h1>
+    <div className="dashboard-page">
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-orb" />
+        <div className="dashboard-hero-content">
+          <div className="dashboard-kicker">
+            <Sparkles size={14} /> Command centre
+          </div>
+          <h1>Run your business from one workspace.</h1>
+          <p>
+            ABLECT Business Suite connects sales, inventory, purchasing, customers,
+            people and reporting in a single fluid desktop experience.
+          </p>
+        </div>
+      </section>
 
-      <p style={{ color: "#666", marginBottom: 30 }}>
-        Business Management Dashboard
-      </p>
+      <section className="dashboard-section">
+        <div className="dashboard-section-header">
+          <div>
+            <h2>Business modules</h2>
+            <p>Open a workspace and continue without losing your place.</p>
+          </div>
+        </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
-          gap: 20,
-        }}
-      >
-        {modules.map((module) => {
-          const Icon = module.icon;
+        <div className="dashboard-module-grid">
+          {modules.map((module) => {
+            const Icon = module.icon;
 
-          return (
-            <Link
-              key={module.title}
-              to={module.link}
-              style={{
-                textDecoration: "none",
-                color: "#222",
-                background: "#fff",
-                borderRadius: 12,
-                padding: 24,
-                border: "1px solid #e5e7eb",
-                transition: "0.2s",
-              }}
-            >
-              <Icon size={34} />
-
-              <h2>{module.title}</h2>
-
-              <p>{module.desc}</p>
-            </Link>
-          );
-        })}
-      </div>
+            return (
+              <Link key={module.title} to={module.link} className="dashboard-module-card">
+                <div>
+                  <div className="dashboard-module-icon">
+                    <Icon size={20} />
+                  </div>
+                  <div style={{ marginTop: 14 }}>
+                    <h3>{module.title}</h3>
+                    <p>{module.desc}</p>
+                  </div>
+                </div>
+                <ArrowRight size={17} className="dashboard-card-arrow" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
-}  
+}
