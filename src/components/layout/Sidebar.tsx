@@ -26,6 +26,7 @@ type Props = {
   collapsed: boolean;
   mobileOpen: boolean;
   onNavigate: () => void;
+  onToggle: () => void;
 };
 
 type NavItem = {
@@ -92,6 +93,7 @@ export default function Sidebar({
   collapsed,
   mobileOpen,
   onNavigate,
+  onToggle,
 }: Props) {
   return (
     <aside
@@ -161,12 +163,9 @@ export default function Sidebar({
         <button
           type="button"
           className="sidebar-collapse"
-          onClick={() => {
-            if (window.innerWidth >= 1024) {
-              document.documentElement.classList.toggle("sidebar-transition");
-            }
-          }}
-          aria-label="Toggle sidebar"
+          onClick={onToggle}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           {!collapsed && <span>Collapse</span>}
