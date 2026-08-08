@@ -5,9 +5,7 @@ import {
   BarChart3,
   Boxes,
   Building2,
-  CalendarCheck,
   ClipboardList,
-  CreditCard,
   DollarSign,
   Package,
   Settings,
@@ -40,11 +38,9 @@ const modules: DashboardModule[] = [
   { title: "Reports", desc: "Business performance and analytics", icon: BarChart3, link: "/reports" },
   { title: "CRM", desc: "Relationships and customer activity", icon: UserRoundSearch, link: "/crm" },
   { title: "Opportunities", desc: "Pipeline and sales opportunities", icon: Target, link: "/crm/opportunities" },
-  { title: "Activities", desc: "Calls, meetings and follow-ups", icon: CalendarCheck, link: "/crm/activities" },
   { title: "Users", desc: "System access and permissions", icon: Users, link: "/users" },
   { title: "HR", desc: "Employees and workforce management", icon: Users, link: "/hr" },
   { title: "Payroll", desc: "Salary processing and payroll", icon: DollarSign, link: "/payroll" },
-  { title: "Accounting", desc: "Finance and accounting workspace", icon: CreditCard, link: "/accounting" },
   { title: "Settings", desc: "Configure your business suite", icon: Settings, link: "/settings" },
 ];
 
