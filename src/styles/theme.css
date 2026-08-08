@@ -2,18 +2,51 @@
 @import "./spacing.css";
 @import "./typography.css";
 @import "./shadows.css";
-:root{
 
---primary:#DC2626;
+:root {
+  --primary: #dc2626;
+  --primary-soft: #fef2f2;
+  --primary-border: #fecaca;
+  --success: #16a34a;
+  --success-soft: #f0fdf4;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --info: #2563eb;
+  --info-soft: #eff6ff;
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 12px 34px rgba(15, 23, 42, 0.07);
+}
 
---success:#16A34A;
+html {
+  scroll-behavior: smooth;
+}
 
---warning:#EA580C;
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
 
---info:#2563EB;
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
 
---background:#F8FAFC;
-
---radius:14px;
-
+::selection {
+  background: rgba(220, 38, 38, 0.16);
+  color: var(--text);
 }
