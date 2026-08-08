@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
 
 import MainLayout from "../layouts/MainLayout";
 import ProtectedRoute from "../auth/ProtectedRoute";
@@ -24,7 +25,7 @@ import OpportunityPage from "../modules/crm/pages/OpportunityPage";
 import UserPage from "../modules/users/pages/UserPage";
 import EmployeePage from "../modules/hr/pages/EmployeePage";
 
-function ProtectedPage({ children }: { children: React.ReactNode }) {
+function ProtectedPage({ children }: { children: ReactNode }) {
   return (
     <ProtectedRoute>
       <MainLayout>{children}</MainLayout>
