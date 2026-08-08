@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Bell, ChevronDown, Menu, Search, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
@@ -46,7 +46,7 @@ export default function Topbar({ onMenuClick }: Props) {
     navigate("/login", { replace: true });
   }
 
-  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalized = query.trim().toLowerCase();
 
