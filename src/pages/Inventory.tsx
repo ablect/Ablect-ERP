@@ -1,3 +1,1 @@
-export default function Inventory() {
-  return <h1>Inventory Module</h1>;
-}
+export { default } from "../modules/inventory/pages/InventoryPage";

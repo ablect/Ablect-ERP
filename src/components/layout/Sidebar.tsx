@@ -8,7 +8,13 @@ import {
   Users,
   Truck,
   BarChart3,
-  Settings
+  Briefcase,
+  Building2,
+  Boxes,
+  ClipboardList,
+  UserCog,
+  DollarSign,
+  Settings,
 } from "lucide-react";
 
 import "./Sidebar.css";
@@ -45,6 +51,35 @@ export default function Sidebar() {
 
       </NavLink>
 
+<NavLink to="/purchases">
+  <ClipboardList size={18} />
+  Purchases
+</NavLink>
+
+<NavLink to="/warehouse">
+  <Building2 size={18} />
+  Warehouse
+</NavLink>
+
+<NavLink to="/stock">
+  <Boxes size={18} />
+  Stock
+</NavLink>
+
+<NavLink to="/users">
+  <UserCog size={18} />
+  Users
+</NavLink>
+
+<NavLink to="/hr">
+  <Briefcase size={18} />
+  HR
+</NavLink>
+
+<NavLink to="/payroll">
+  <DollarSign size={18} />
+  Payroll
+</NavLink>
       <NavLink to="/sales">
 
         <ShoppingCart size={18} />

@@ -1,3 +1,1 @@
-export default function Sales() {
-  return <h1>Sales Module</h1>;
-}
+export { default } from "../modules/sales/pages/SalesPage";

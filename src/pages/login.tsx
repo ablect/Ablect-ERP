@@ -20,7 +20,7 @@ export default function Login() {
           borderRadius: 12,
         }}
       >
-        <h2>Ablect Business Suite</h2>
+        <h1>Ablect Business Suite</h1>
 
         <Input placeholder="Username" />
 
@@ -29,7 +29,7 @@ export default function Login() {
           placeholder="Password"
         />
 
-        <Button text="Login" />
+        <Button>Login</Button>
       </div>
     </div>
   );
