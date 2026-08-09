@@ -1,19 +1,13 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 
 /**
  * Initialize the minimum shared schema required by the ERP runtime.
  *
- * The schema is intentionally additive: every table uses IF NOT EXISTS so
- * existing client data is not dropped when the application starts.
+ * The schema is additive: every table uses IF NOT EXISTS, so starting a newer
+ * application build does not drop a client's existing data.
  */
-export async function initializeDatabase(pool) {
-  const schemaPath = path.join(process.cwd(), "electron", "database", "schema.sql");
+export async function initializeDatabase(pool, schemaPath) {
   const sql = await fs.readFile(schemaPath, "utf8");
-
-  // MySQL can execute the complete script when multipleStatements is enabled,
-  // but we deliberately keep it disabled on the pool. Split only on the simple
-  // semicolon-delimited statements used by our checked-in schema file.
   const statements = sql
     .split(/;\s*(?:\r?\n|$)/)
     .map((statement) => statement.trim())
