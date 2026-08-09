@@ -1,22 +1,9 @@
-import {
-createJournalEntry
-}
-from "./createJournalEntry";
+import { createJournalEntry } from "./createJournalEntry";
 
-export const defaultJournalEntries=[
-
-createJournalEntry(
-
-"Opening Capital",
-
-"Cash",
-
-"Capital",
-
-500000,
-
-"OPEN001",
-
-),
-
+export const defaultJournalEntries = [
+  createJournalEntry(
+    "OPEN001",
+    "Opening Capital",
+    "Opening capital balance",
+  ),
 ];
