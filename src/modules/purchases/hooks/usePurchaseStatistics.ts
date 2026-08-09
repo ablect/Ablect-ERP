@@ -1,81 +1,19 @@
-import {
+import { usePurchaseOrders } from "./usePurchaseOrders";
 
-usePurchaseOrders
+export function usePurchaseStatistics() {
+  const { orders } = usePurchaseOrders();
 
-}
+  const draft = orders.filter((order) => order.status === "Draft").length;
+  const completed = orders.filter((order) => order.status === "Completed").length;
+  const totalValue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-from "./usePurchaseOrders";
-
-export function usePurchaseStatistics(){
-
-const{
-
-orders,
-
-}=
-
-usePurchaseOrders();
-
-const draft=
-
-orders.filter(
-
-order=>order.status==="Draft"
-
-).length;
-
-const pending=
-
-orders.filter(
-
-order=>order.status==="Pending"
-
-).length;
-
-const approved=
-
-orders.filter(
-
-order=>order.status==="Approved"
-
-).length;
-
-const received=
-
-orders.filter(
-
-order=>order.status==="Received"
-
-).length;
-
-const totalValue=
-
-orders.reduce(
-
-(sum,order)=>
-
-sum+order.total,
-
-0,
-
-);
-
-return{
-
-total:
-
-orders.length,
-
-draft,
-
-pending,
-
-approved,
-
-received,
-
-totalValue,
-
-};
-
+  return {
+    total: orders.length,
+    draft,
+    completed,
+    pending: 0,
+    approved: 0,
+    received: completed,
+    totalValue,
+  };
 }
