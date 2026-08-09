@@ -6,19 +6,55 @@ function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+async function columnExists(connection, tableName, columnName) {
+  const [[row]] = await connection.query(
+    `SELECT 1 AS present FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+      LIMIT 1`,
+    [tableName, columnName],
+  );
+  return Boolean(row);
+}
+
+async function indexExists(connection, tableName, indexName) {
+  const [[row]] = await connection.query(
+    `SELECT 1 AS present FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?
+      LIMIT 1`,
+    [tableName, indexName],
+  );
+  return Boolean(row);
+}
+
+async function foreignKeyExists(connection, tableName, constraintName) {
+  const [[row]] = await connection.query(
+    `SELECT 1 AS present FROM information_schema.TABLE_CONSTRAINTS
+      WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = ?
+        AND CONSTRAINT_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+      LIMIT 1`,
+    [tableName, constraintName],
+  );
+  return Boolean(row);
+}
+
 export async function up(connection) {
-  await connection.query(`
-    ALTER TABLE users
-      ADD COLUMN email VARCHAR(255) NULL AFTER username,
-      ADD COLUMN role_id BIGINT UNSIGNED NULL AFTER role,
-      ADD KEY idx_users_role (role_id),
-      ADD UNIQUE KEY uq_users_email (email),
-      ADD CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id)
-  `).catch((error) => {
-    // The migration is only executed once. This guard also lets an installation
-    // recover gracefully if an administrator pre-created one of the columns.
-    if (error.code !== "ER_DUP_FIELDNAME" && error.code !== "ER_DUP_KEYNAME") throw error;
-  });
+  if (!(await columnExists(connection, "users", "email"))) {
+    await connection.query(`ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL AFTER username`);
+  }
+  if (!(await columnExists(connection, "users", "role_id"))) {
+    await connection.query(`ALTER TABLE users ADD COLUMN role_id BIGINT UNSIGNED NULL AFTER role`);
+  }
+  if (!(await indexExists(connection, "users", "idx_users_role"))) {
+    await connection.query(`ALTER TABLE users ADD KEY idx_users_role (role_id)`);
+  }
+  if (!(await indexExists(connection, "users", "uq_users_email"))) {
+    await connection.query(`ALTER TABLE users ADD UNIQUE KEY uq_users_email (email)`);
+  }
+  if (!(await foreignKeyExists(connection, "users", "fk_users_role"))) {
+    await connection.query(
+      `ALTER TABLE users ADD CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id)`,
+    );
+  }
 
   await connection.query(`
     CREATE TABLE IF NOT EXISTS user_sessions (
@@ -115,11 +151,6 @@ export async function up(connection) {
     );
   }
 
-  // Remove expired sessions during migration so a schema upgrade never leaves
-  // stale credentials active.
   await connection.query(`DELETE FROM user_sessions WHERE expires_at < NOW()`);
-
-  // Keep the token hashing helper referenced in this migration module so the
-  // migration's crypto contract is explicit and easy to audit.
   void hashToken;
 }
