@@ -7,6 +7,7 @@ import LoginPage from "../pages/LoginPage";
 
 import Dashboard from "../pages/Dashboard";
 import ProductPage from "../pages/ProductPage";
+import ProductDashboard from "../components/products/ProductDashboard";
 import CustomersPage from "../pages/Customers";
 import SuppliersPage from "../pages/Suppliers";
 import ReportsPage from "../pages/Reports";
@@ -38,10 +39,10 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-
         <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
         <Route path="/inventory" element={<ProtectedPage><InventoryPage /></ProtectedPage>} />
-        <Route path="/products" element={<ProtectedPage><ProductPage /></ProtectedPage>} />
+        <Route path="/products" element={<ProtectedPage><ProductDashboard /></ProtectedPage>} />
+        <Route path="/products/legacy" element={<ProtectedPage><ProductPage /></ProtectedPage>} />
         <Route path="/sales" element={<ProtectedPage><SalesPage /></ProtectedPage>} />
         <Route path="/purchases" element={<ProtectedPage><PurchasePage /></ProtectedPage>} />
         <Route path="/purchases/goods-received" element={<ProtectedPage><GoodsReceivedNotePage /></ProtectedPage>} />
@@ -57,7 +58,6 @@ export default function AppRouter() {
         <Route path="/users" element={<ProtectedPage><UserPage /></ProtectedPage>} />
         <Route path="/hr" element={<ProtectedPage><EmployeePage /></ProtectedPage>} />
         <Route path="/payroll" element={<ProtectedPage><PayrollPage /></ProtectedPage>} />
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
