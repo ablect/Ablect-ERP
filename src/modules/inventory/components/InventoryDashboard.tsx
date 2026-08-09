@@ -48,9 +48,7 @@ export default function InventoryDashboard() {
     }
   }
 
-  useEffect(() => {
-    void loadInventory();
-  }, []);
+  useEffect(() => { void loadInventory(); }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -123,7 +121,7 @@ export default function InventoryDashboard() {
             <button onClick={() => void loadInventory()} className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-500/15 transition hover:-translate-y-0.5 hover:bg-indigo-400"><RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh</button>
           </div>
         </header>
-        <section className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[["Inventory value", `₦${inventoryValue.toLocaleString()}`, "At current unit cost", TrendingUp], ["Units on hand", totalUnits.toLocaleString(), `${items.length.toLocaleString()} SKUs`, Boxes], ["Low stock", lowStock.toLocaleString(), "Needs attention", TrendingDown], ["Out of stock", outOfStock.toLocaleString(), "Unavailable now", PackagePlus]].map(([label, value, hint, Icon]) => { const IconComponent = Icon as typeof Boxes; return <motion.div key={String(label)} whileHover={{ y: -2 }} className="rounded-2xl border border-white/[0.07] bg-[#16181D] p-4 shadow-xl shadow-black/10"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">{label}</p><p className="mt-2 text-2xl font-black text-white">{value}</p><p className="mt-1 text-xs text-slate-600">{hint}</p></div><div className="rounded-xl bg-white/[0.04] p-2 text-indigo-300"><IconComponent size={17} /></div></div></motion.div>; })}</section>
+        <section className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{([["Inventory value", `₦${inventoryValue.toLocaleString()}`, "At current unit cost", TrendingUp], ["Units on hand", totalUnits.toLocaleString(), `${items.length.toLocaleString()} SKUs`, Boxes], ["Low stock", lowStock.toLocaleString(), "Needs attention", TrendingDown], ["Out of stock", outOfStock.toLocaleString(), "Unavailable now", PackagePlus]] as [string, string, string, typeof Boxes][]).map(([label, value, hint, Icon]) => <motion.div key={label} whileHover={{ y: -2 }} className="rounded-2xl border border-white/[0.07] bg-[#16181D] p-4 shadow-xl shadow-black/10"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">{label}</p><p className="mt-2 text-2xl font-black text-white">{value}</p><p className="mt-1 text-xs text-slate-600">{hint}</p></div><div className="rounded-xl bg-white/[0.04] p-2 text-indigo-300"><Icon size={17} /></div></div></motion.div>)}</section>
       </div>
       <main className="relative space-y-4 border-t border-white/[0.05] p-4 sm:p-6 lg:p-7">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="text-lg font-bold text-white">Stock workspace</h2><p className="mt-1 text-xs text-slate-600">Click any row to open the spatial context drawer. Edit quantities inline for rapid stock control.</p></div><div className="flex gap-2 overflow-x-auto"><select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))} className="rounded-xl border border-white/[0.07] bg-[#16181D] px-3 py-2 text-xs font-semibold text-slate-400 outline-none focus:border-indigo-400/30">{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select><button onClick={() => setFilters({ search: "", status: "All", category: "All" })} className="inline-flex items-center gap-2 rounded-xl border border-white/[0.07] px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-200"><SlidersHorizontal size={14} /> Clear</button></div></div>
