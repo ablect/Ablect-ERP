@@ -27,20 +27,46 @@ $mysqlExe = if ($mysql.Source) { $mysql.Source } else { $mysql.Path }
 Write-Host "Configuring local MySQL for Ablect Business Suite..." -ForegroundColor Cyan
 Write-Host "MySQL root credentials are used only for this setup command." -ForegroundColor Yellow
 
+# MySQL treats localhost, 127.0.0.1 and ::1 as separate account hosts.
+# Provision all of them so Electron cannot fail because of local host resolution.
 $sql = @"
 CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$appUser'@'localhost' IDENTIFIED BY '$appPassword';
 ALTER USER '$appUser'@'localhost' IDENTIFIED BY '$appPassword';
 CREATE USER IF NOT EXISTS '$appUser'@'127.0.0.1' IDENTIFIED BY '$appPassword';
 ALTER USER '$appUser'@'127.0.0.1' IDENTIFIED BY '$appPassword';
+CREATE USER IF NOT EXISTS '$appUser'@'::1' IDENTIFIED BY '$appPassword';
+ALTER USER '$appUser'@'::1' IDENTIFIED BY '$appPassword';
+CREATE USER IF NOT EXISTS '$appUser'@'%' IDENTIFIED BY '$appPassword';
+ALTER USER '$appUser'@'%' IDENTIFIED BY '$appPassword';
 GRANT ALL PRIVILEGES ON `$database`.* TO '$appUser'@'localhost';
 GRANT ALL PRIVILEGES ON `$database`.* TO '$appUser'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON `$database`.* TO '$appUser'@'::1';
+GRANT ALL PRIVILEGES ON `$database`.* TO '$appUser'@'%';
 FLUSH PRIVILEGES;
 "@
 
 & $mysqlExe --protocol=tcp --host=127.0.0.1 --user=root -p -e $sql
 if ($LASTEXITCODE -ne 0) {
   throw "MySQL setup failed. Check that the MySQL server is running and that the root password is correct."
+}
+
+# Verify the exact credentials and database access that Electron will use.
+# MYSQL_PWD avoids putting the application password into the command line.
+$oldMysqlPwd = $env:MYSQL_PWD
+$env:MYSQL_PWD = $appPassword
+try {
+  & $mysqlExe --protocol=tcp --host=127.0.0.1 --port=3306 --user=$appUser --database=$database -e "SELECT DATABASE() AS database_name, CURRENT_USER() AS mysql_user;"
+  if ($LASTEXITCODE -ne 0) {
+    throw "The MySQL account was created, but the application user still cannot access '$database'."
+  }
+}
+finally {
+  if ($null -eq $oldMysqlPwd) {
+    Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue
+  } else {
+    $env:MYSQL_PWD = $oldMysqlPwd
+  }
 }
 
 $config = @{
