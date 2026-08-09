@@ -1,6 +1,6 @@
 import type { Customer } from "../types/Customer";
 
-const STORAGE_KEY = "ablect-erp-customers";
+const STORAGE_KEY = "ablect-erp-customer-repository";
 
 function readCustomers(): Customer[] {
   if (typeof window === "undefined") return [];
@@ -46,11 +46,7 @@ export class CustomerMemoryRepository {
       throw new Error("Customer not found.");
     }
 
-    writeCustomers(
-      customers.map((customer) =>
-        customer.id === updated.id ? updated : customer,
-      ),
-    );
+    writeCustomers(customers.map((customer) => customer.id === updated.id ? updated : customer));
     return updated;
   }
 
