@@ -4,8 +4,11 @@ import { Check, ChevronRight, ClipboardList, PackageCheck, Plus, Search, Truck, 
 import PageContainer from "../../../components/ui/PageContainer";
 import { useInventoryStore } from "../../inventory/store/InventoryStore";
 import { useSupplyChainStore } from "../../supplyChain/store/useSupplyChainStore";
+import type { LucideIcon } from "lucide-react";
 
 const money = (value: number) => `₦${value.toLocaleString()}`;
+
+type Metric = { label: string; value: string | number; Icon: LucideIcon; tone: "indigo" | "emerald" | "sky" | "amber" };
 
 export default function PurchasePage() {
   const hydrate = useSupplyChainStore((state) => state.hydrate);
@@ -39,6 +42,13 @@ export default function PurchasePage() {
   const received = purchases.filter((item) => item.status === "Received").length;
   const value = purchases.reduce((sum, item) => sum + item.totalAmount, 0);
 
+  const metrics: Metric[] = [
+    { label: "Open POs", value: pending, Icon: ClipboardList, tone: "indigo" },
+    { label: "Received", value: received, Icon: PackageCheck, tone: "emerald" },
+    { label: "Suppliers", value: suppliers.length, Icon: Truck, tone: "sky" },
+    { label: "Committed value", value: money(value), Icon: ChevronRight, tone: "amber" },
+  ];
+
   async function submit() {
     if (!supplierId || !warehouseId || !productId || quantity <= 0) return;
     await createPurchase({ supplierId, warehouseId, orderDate: new Date().toISOString(), expectedDate: new Date(Date.now() + 86400000 * 3).toISOString(), notes: "Created from procurement workspace", lines: [{ id: crypto.randomUUID(), productId, quantity, receivedQuantity: 0, unitCost }] });
@@ -54,7 +64,7 @@ export default function PurchasePage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[["Open POs", pending, ClipboardList, "indigo"],["Received", received, PackageCheck, "emerald"],["Suppliers", suppliers.length, Truck, "sky"],["Committed value", money(value), ChevronRight, "amber"]].map(([label, val, Icon, tone]) => <motion.div key={String(label)} whileHover={{ y: -3 }} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-2xl ${tone === "indigo" ? "bg-indigo-50 text-indigo-600" : tone === "emerald" ? "bg-emerald-50 text-emerald-600" : tone === "sky" ? "bg-sky-50 text-sky-600" : "bg-amber-50 text-amber-600"}`}><Icon size={19}/></div><p className="text-xs font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{val}</p></motion.div>)}
+        {metrics.map(({ label, value: metricValue, Icon, tone }) => <motion.div key={label} whileHover={{ y: -3 }} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-2xl ${tone === "indigo" ? "bg-indigo-50 text-indigo-600" : tone === "emerald" ? "bg-emerald-50 text-emerald-600" : tone === "sky" ? "bg-sky-50 text-sky-600" : "bg-amber-50 text-amber-600"}`}><Icon size={19}/></div><p className="text-xs font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{metricValue}</p></motion.div>)}
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_380px]">
