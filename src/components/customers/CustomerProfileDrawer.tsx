@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, Check, Copy, CreditCard, Edit3, MapPin, Save, ShieldCheck, Star, Tag, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera, CreditCard, Edit3, MapPin, Save, ShieldCheck, Star, Tag, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
 
 import type { Customer, CustomerTier } from "../../modules/customers/types/Customer";
 import CommunicationBar from "./CommunicationBar";
@@ -32,15 +32,15 @@ export default function CustomerProfileDrawer({ customer, lifetimeValue, activeO
   const [form, setForm] = useState<Partial<Customer>>({});
   const [tagText, setTagText] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-  const feedback = useUIFeedback();
+  const { click, success, whoosh, error } = useUIFeedback();
 
   useEffect(() => {
     if (!customer) return;
     setForm({ ...customer });
     setEditing(false);
     setTagText("");
-    feedback.whoosh();
-  }, [customer, feedback]);
+    whoosh();
+  }, [customer, whoosh]);
 
   const tags = form.tags ?? customer?.tags ?? [];
   const displayCustomer = customer ? { ...customer, ...form } : null;
@@ -55,10 +55,10 @@ export default function CustomerProfileDrawer({ customer, lifetimeValue, activeO
     setSaving(true);
     try {
       await onSave(form);
-      feedback.success();
+      success();
       setEditing(false);
     } catch {
-      feedback.error();
+      error();
     } finally {
       setSaving(false);
     }
@@ -69,21 +69,21 @@ export default function CustomerProfileDrawer({ customer, lifetimeValue, activeO
     if (!value) return;
     setForm((current) => ({ ...current, tags: Array.from(new Set([...(current.tags ?? []), value])) }));
     setTagText("");
-    feedback.click();
+    click();
   }
 
   function removeTag(tag: string) {
     setForm((current) => ({ ...current, tags: (current.tags ?? []).filter((item) => item !== tag) }));
-    feedback.click();
+    click();
   }
 
-  function handleAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatar(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => setForm((current) => ({ ...current, avatarUrl: String(reader.result) }));
     reader.readAsDataURL(file);
-    feedback.click();
+    click();
   }
 
   return (
@@ -101,7 +101,7 @@ export default function CustomerProfileDrawer({ customer, lifetimeValue, activeO
                 {editing ? (
                   <button type="button" onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"><Save size={15} /> {saving ? "Saving..." : "Save"}</button>
                 ) : (
-                  <button type="button" onClick={() => { setEditing(true); feedback.click(); }} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"><Edit3 size={15} /> Edit</button>
+                  <button type="button" onClick={() => { setEditing(true); click(); }} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"><Edit3 size={15} /> Edit</button>
                 )}
                 <button type="button" onClick={onClose} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={19} /></button>
               </div>
@@ -174,7 +174,7 @@ export default function CustomerProfileDrawer({ customer, lifetimeValue, activeO
 
               {editing && (
                 <section className="mt-5 rounded-3xl border border-rose-100 bg-rose-50/60 p-5">
-                  <div className="flex items-start justify-between gap-4"><div><h3 className="font-bold text-rose-900">Danger zone</h3><p className="mt-1 text-xs text-rose-700">Delete this customer from the local customer master.</p></div><button type="button" onClick={async () => { await onDelete(); feedback.success(); }} className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-rose-600 shadow-sm ring-1 ring-rose-200 hover:bg-rose-100">Delete customer</button></div>
+                  <div className="flex items-start justify-between gap-4"><div><h3 className="font-bold text-rose-900">Danger zone</h3><p className="mt-1 text-xs text-rose-700">Delete this customer from the local customer master.</p></div><button type="button" onClick={async () => { await onDelete(); success(); }} className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-rose-600 shadow-sm ring-1 ring-rose-200 hover:bg-rose-100">Delete customer</button></div>
                 </section>
               )}
             </div>
@@ -185,7 +185,7 @@ export default function CustomerProfileDrawer({ customer, lifetimeValue, activeO
   );
 }
 
-function Metric({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "sky" | "amber" | "emerald" }) {
+function Metric({ icon, label, value, tone }: { icon: ReactNode; label: string; value: string; tone: "sky" | "amber" | "emerald" }) {
   const classes = { sky: "bg-sky-50 text-sky-700", amber: "bg-amber-50 text-amber-700", emerald: "bg-emerald-50 text-emerald-700" }[tone];
   return <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3"><div className={`mb-2 grid h-8 w-8 place-items-center rounded-xl ${classes}`}>{icon}</div><p className="truncate text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p><p className="mt-1 truncate text-sm font-black text-slate-900">{value}</p></div>;
 }
