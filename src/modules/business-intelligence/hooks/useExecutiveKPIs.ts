@@ -1,59 +1,54 @@
-import {
-  useExecutiveScorecard,
-} from "./useExecutiveScorecard";
+import { useExecutiveScorecard } from "./useExecutiveScorecard";
+import type { KPI } from "../types/KPI";
 
-export function useExecutiveKPIs() {
-
-  const scorecard =
-    useExecutiveScorecard();
+export function useExecutiveKPIs(): KPI[] {
+  const scorecard = useExecutiveScorecard();
 
   return [
-
     {
       id: "revenue",
       title: "Revenue",
-      value: `₦${scorecard.totalRevenue.toLocaleString()}`,
-      route: "/analytics/revenue",
-      category: "finance",
-      priority: 1,
+      value: scorecard.totalRevenue,
+      previousValue: 0,
+      change: 0,
+      trend: "flat",
+      format: "currency",
     },
-
     {
       id: "profit",
       title: "Net Profit",
-      value: `₦${scorecard.netProfit.toLocaleString()}`,
-      route: "/accounting/profit-loss",
-      category: "finance",
-      priority: 2,
+      value: scorecard.netProfit,
+      previousValue: 0,
+      change: 0,
+      trend: "flat",
+      format: "currency",
     },
-
     {
       id: "inventory",
       title: "Inventory",
-      value: `₦${scorecard.inventoryValue.toLocaleString()}`,
-      route: "/analytics/inventory",
-      category: "inventory",
-      priority: 3,
+      value: scorecard.inventoryValue,
+      previousValue: 0,
+      change: 0,
+      trend: "flat",
+      format: "currency",
     },
-
     {
       id: "customers",
       title: "Customers",
-      value: scorecard.activeCustomers.toLocaleString(),
-      route: "/analytics/customers",
-      category: "crm",
-      priority: 4,
+      value: scorecard.activeCustomers,
+      previousValue: 0,
+      change: 0,
+      trend: "flat",
+      format: "number",
     },
-
     {
       id: "suppliers",
-      title: "Suppliers",
-      value: `${scorecard.supplierRating.toFixed(1)}/5`,
-      route: "/analytics/suppliers",
-      category: "procurement",
-      priority: 5,
+      title: "Supplier Rating",
+      value: scorecard.supplierRating,
+      previousValue: 0,
+      change: 0,
+      trend: "flat",
+      format: "number",
     },
-
   ];
-
 }
