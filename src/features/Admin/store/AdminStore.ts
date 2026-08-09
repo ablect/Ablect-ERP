@@ -2,75 +2,30 @@ import { create } from "zustand";
 
 export type PermissionAction = "view" | "create" | "edit" | "delete" | "export";
 export type AdminRole = "Super Admin" | "Administrator" | "Sales Manager" | "Cashier" | "Inventory Manager" | "HR Manager" | "Finance" | "Marketer" | "Viewer";
-
 export type AppModule = "Dashboard" | "Sales" | "Products" | "Inventory" | "Purchases" | "Customers" | "Suppliers" | "Warehouse" | "CRM" | "HR" | "Payroll" | "Reports" | "Settings" | "Users";
 
-export interface PermissionSet {
-  view: boolean;
-  create: boolean;
-  edit: boolean;
-  delete: boolean;
-  export: boolean;
-}
-
+export interface PermissionSet { view: boolean; create: boolean; edit: boolean; delete: boolean; export: boolean; }
 export type PermissionMatrix = Record<AppModule, PermissionSet>;
-
-export interface SystemUser {
-  id: string;
-  name: string;
-  email: string;
-  role: AdminRole;
-  department: string;
-  status: "Active" | "Suspended" | "Invited";
-  lastActive: string;
-  twoFactor: boolean;
-}
-
-export interface AuditLog {
-  id: string;
-  timestamp: string;
-  actor: string;
-  action: string;
-  module: AppModule;
-  severity: "Info" | "Warning" | "Critical";
-  reference?: string;
-}
+export interface SystemUser { id: string; name: string; email: string; role: AdminRole; department: string; status: "Active" | "Suspended" | "Invited"; lastActive: string; twoFactor: boolean; }
+export interface AuditLog { id: string; timestamp: string; actor: string; action: string; module: AppModule; severity: "Info" | "Warning" | "Critical"; reference?: string; }
 
 const modules: AppModule[] = ["Dashboard", "Sales", "Products", "Inventory", "Purchases", "Customers", "Suppliers", "Warehouse", "CRM", "HR", "Payroll", "Reports", "Settings", "Users"];
 const full = (): PermissionSet => ({ view: true, create: true, edit: true, delete: true, export: true });
 const none = (): PermissionSet => ({ view: false, create: false, edit: false, delete: false, export: false });
 const viewOnly = (): PermissionSet => ({ view: true, create: false, edit: false, delete: false, export: true });
-
-function matrix(base: PermissionSet = none()): PermissionMatrix {
-  return Object.fromEntries(modules.map((module) => [module, { ...base }])) as PermissionMatrix;
-}
+const withOverrides = (overrides: Partial<Record<AppModule, PermissionSet>>): PermissionMatrix => Object.fromEntries(modules.map((module) => [module, overrides[module] ? { ...overrides[module] } : none()])) as PermissionMatrix;
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRole, PermissionMatrix> = {
-  "Super Admin": matrix(full()),
-  Administrator: matrix(full()),
-  "Sales Manager": {
-    ...matrix(), Sales: full(), Customers: full(), CRM: full(), Products: { ...full(), delete: false }, Reports: viewOnly(), Dashboard: viewOnly(),
-  },
-  Cashier: {
-    ...matrix(), Sales: { view: true, create: true, edit: true, delete: false, export: false }, Customers: { view: true, create: true, edit: true, delete: false, export: false }, Products: viewOnly(), Dashboard: viewOnly(),
-  },
-  "Inventory Manager": {
-    ...matrix(), Products: full(), Inventory: full(), Purchases: full(), Suppliers: full(), Warehouse: full(), Stock: full as never,
-  } as PermissionMatrix,
-  "HR Manager": {
-    ...matrix(), HR: full(), Users: full(), Payroll: full(), Reports: viewOnly(), Dashboard: viewOnly(),
-  },
-  Finance: {
-    ...matrix(), Reports: full(), Payroll: full(), Purchases: viewOnly(), Sales: viewOnly(), Dashboard: viewOnly(),
-  },
-  Marketer: {
-    ...matrix(), Customers: { view: true, create: true, edit: true, delete: false, export: true }, CRM: { view: true, create: true, edit: true, delete: false, export: true }, Sales: viewOnly(), Dashboard: viewOnly(),
-  },
-  Viewer: matrix(viewOnly()),
+  "Super Admin": Object.fromEntries(modules.map((m) => [m, full()])) as PermissionMatrix,
+  Administrator: Object.fromEntries(modules.map((m) => [m, full()])) as PermissionMatrix,
+  "Sales Manager": withOverrides({ Sales: full(), Customers: full(), CRM: full(), Products: { ...full(), delete: false }, Reports: viewOnly(), Dashboard: viewOnly() }),
+  Cashier: withOverrides({ Sales: { view: true, create: true, edit: true, delete: false, export: false }, Customers: { view: true, create: true, edit: true, delete: false, export: false }, Products: viewOnly(), Dashboard: viewOnly() }),
+  "Inventory Manager": withOverrides({ Products: full(), Inventory: full(), Purchases: full(), Suppliers: full(), Warehouse: full(), Dashboard: viewOnly(), Reports: viewOnly() }),
+  "HR Manager": withOverrides({ HR: full(), Users: full(), Payroll: full(), Reports: viewOnly(), Dashboard: viewOnly() }),
+  Finance: withOverrides({ Reports: full(), Payroll: full(), Purchases: viewOnly(), Sales: viewOnly(), Dashboard: viewOnly() }),
+  Marketer: withOverrides({ Customers: { view: true, create: true, edit: true, delete: false, export: true }, CRM: { view: true, create: true, edit: true, delete: false, export: true }, Sales: viewOnly(), Dashboard: viewOnly() }),
+  Viewer: Object.fromEntries(modules.map((m) => [m, viewOnly()])) as PermissionMatrix,
 };
-
-// Keep the public matrix aligned with the modules supported by this ERP.
-delete (DEFAULT_ROLE_PERMISSIONS["Inventory Manager"] as Partial<PermissionMatrix>).Stock;
 
 interface AdminState {
   users: SystemUser[];
@@ -100,9 +55,7 @@ export const useAdminStore = create<AdminState>((set) => ({
     { id: "a4", timestamp: "2026-08-09 15:21", actor: "Toba Oluwatoba", action: "Updated Cashier role permissions", module: "Users", severity: "Critical", reference: "RBAC-209" },
   ],
   setSelectedRole: (role) => set({ selectedRole: role }),
-  togglePermission: (role, module, action) => set((state) => ({
-    roles: { ...state.roles, [role]: { ...state.roles[role], [module]: { ...state.roles[role][module], [action]: !state.roles[role][module][action] } } },
-  })),
+  togglePermission: (role, module, action) => set((state) => ({ roles: { ...state.roles, [role]: { ...state.roles[role], [module]: { ...state.roles[role][module], [action]: !state.roles[role][module][action] } } } })),
   setUserRole: (userId, role) => set((state) => ({ users: state.users.map((user) => user.id === userId ? { ...user, role } : user) })),
   setUserStatus: (userId, status) => set((state) => ({ users: state.users.map((user) => user.id === userId ? { ...user, status } : user) })),
   addAuditLog: (log) => set((state) => ({ auditLogs: [{ ...log, id: crypto.randomUUID(), timestamp: new Date().toLocaleString("en-NG") }, ...state.auditLogs] })),
