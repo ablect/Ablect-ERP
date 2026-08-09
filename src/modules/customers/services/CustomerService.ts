@@ -1,48 +1,14 @@
 import type { Customer } from "../types/Customer";
 
-import {
-  CustomerMemoryRepository,
-} from "../repositories/CustomerMemoryRepository";
-
-const repository =
-  new CustomerMemoryRepository();
+function api() {
+  if (!window.ablectDesktop?.erp?.customers) throw new Error("Desktop data bridge is unavailable.");
+  return window.ablectDesktop.erp.customers;
+}
 
 export const customerService = {
-  async getAll(): Promise<Customer[]> {
-    return repository.getAll();
-  },
-
-  async getById(
-    id: string,
-  ): Promise<Customer | undefined> {
-    return repository.getById(id);
-  },
-
-  async create(
-    customer: Customer,
-  ): Promise<Customer[]> {
-    await repository.create(
-      customer,
-    );
-
-    return repository.getAll();
-  },
-
-  async update(
-    updated: Customer,
-  ): Promise<Customer[]> {
-    await repository.update(
-      updated,
-    );
-
-    return repository.getAll();
-  },
-
-  async delete(
-    id: string,
-  ): Promise<Customer[]> {
-    await repository.delete(id);
-
-    return repository.getAll();
-  },
+  async getAll(): Promise<Customer[]> { return (await api().list()) as Customer[]; },
+  async getById(id: string): Promise<Customer | undefined> { return (await api().list(id) as Customer[]).find((customer) => customer.id === id); },
+  async create(customer: Customer): Promise<Customer[]> { return (await api().create(customer)) as Customer[]; },
+  async update(customer: Customer): Promise<Customer[]> { return (await api().update(customer)) as Customer[]; },
+  async delete(id: string): Promise<Customer[]> { return (await api().delete(id)) as Customer[]; },
 };
