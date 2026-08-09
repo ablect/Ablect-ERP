@@ -41,6 +41,22 @@ async function buildClientConfigPayload() {
   };
 }
 
+async function syncInstallationSettings() {
+  await databasePool.query(
+    `INSERT INTO client_settings (id, business_name, logo_path, installation_date)
+     VALUES (1, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       business_name = VALUES(business_name),
+       logo_path = VALUES(logo_path),
+       installation_date = VALUES(installation_date)`,
+    [
+      clientConfig.CLIENT_BUSINESS_NAME,
+      clientConfig.CLIENT_LOGO_PATH || null,
+      clientConfig.INSTALLATION_DATE || new Date().toISOString().slice(0, 10),
+    ],
+  );
+}
+
 function registerIpcHandlers() {
   ipcMain.handle("client-config:get", buildClientConfigPayload);
   ipcMain.handle("database:status", () => databaseStatus);
@@ -90,6 +106,7 @@ async function initializeLocalRuntime() {
       path.join(app.getAppPath(), "electron", "database", "schema.sql"),
       path.join(app.getAppPath(), "electron", "database", "schema.erp.sql"),
     ]);
+    await syncInstallationSettings();
     databaseStatus = { connected: true, error: null };
     console.log(`MySQL connected: ${clientConfig.DATABASE.HOST}:${clientConfig.DATABASE.PORT}/${clientConfig.DATABASE.NAME}`);
   } catch (error) {
