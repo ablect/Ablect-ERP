@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 /**
  * Ordered migration runner. Each file exports `up(connection, context)` and is
@@ -32,7 +33,10 @@ export async function runMigrations(pool, appPath) {
       const version = fileName.slice(0, fileName.indexOf("_"));
       if (applied.has(version)) continue;
 
-      const migration = await import(path.join(migrationDir, fileName));
+      // Electron runs this code as native ESM. On Windows, `import()` does not
+      // accept a raw absolute path such as C:\\...; convert it to a file:// URL.
+      const migrationPath = path.join(migrationDir, fileName);
+      const migration = await import(pathToFileURL(migrationPath).href);
       if (typeof migration.up !== "function") {
         throw new Error(`Migration ${fileName} does not export an up() function.`);
       }
