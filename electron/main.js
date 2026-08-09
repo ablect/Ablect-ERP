@@ -3,10 +3,12 @@ import path from "node:path";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { createDatabasePool, testDatabaseConnection } from "./database/db.js";
 import { initializeDatabase } from "./database/schema.js";
+import { createErpRepository } from "./database/erp-repository.js";
 import { loadClientConfig, resolveClientLogoPath } from "./config/client-config.js";
 
 let clientConfig;
 let databasePool;
+let erpRepository;
 let databaseStatus = { connected: false, error: null };
 
 async function buildClientConfigPayload() {
@@ -42,6 +44,15 @@ async function buildClientConfigPayload() {
 function registerIpcHandlers() {
   ipcMain.handle("client-config:get", buildClientConfigPayload);
   ipcMain.handle("database:status", () => databaseStatus);
+
+  ipcMain.handle("erp:products:list", (_event, search = "") => erpRepository.listProducts(search));
+  ipcMain.handle("erp:customers:list", (_event, search = "") => erpRepository.listCustomers(search));
+  ipcMain.handle("erp:suppliers:list", (_event, search = "") => erpRepository.listSuppliers(search));
+  ipcMain.handle("erp:warehouses:list", () => erpRepository.listWarehouses());
+  ipcMain.handle("erp:dashboard:metrics", () => erpRepository.getDashboardMetrics());
+  ipcMain.handle("erp:sales:create", (_event, payload) => erpRepository.createSale(payload));
+  ipcMain.handle("erp:purchases:receive", (_event, payload) => erpRepository.receivePurchaseOrder(payload));
+  ipcMain.handle("erp:stock:transfer", (_event, payload) => erpRepository.transferStock(payload));
 }
 
 function createWindow() {
@@ -71,13 +82,14 @@ async function initializeLocalRuntime() {
     database: clientConfig.DATABASE.NAME,
     connectionLimit: clientConfig.DATABASE.CONNECTION_LIMIT,
   });
+  erpRepository = createErpRepository(databasePool);
 
   try {
     await testDatabaseConnection(databasePool);
-    await initializeDatabase(
-      databasePool,
+    await initializeDatabase(databasePool, [
       path.join(app.getAppPath(), "electron", "database", "schema.sql"),
-    );
+      path.join(app.getAppPath(), "electron", "database", "schema.erp.sql"),
+    ]);
     databaseStatus = { connected: true, error: null };
     console.log(`MySQL connected: ${clientConfig.DATABASE.HOST}:${clientConfig.DATABASE.PORT}/${clientConfig.DATABASE.NAME}`);
   } catch (error) {
