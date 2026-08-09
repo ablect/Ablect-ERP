@@ -23,6 +23,7 @@
     "src/modules/hr/components/**/*",
     "src/modules/hr/hooks/**/*",
     "src/modules/payroll/components/**/*",
-    "src/modules/payroll/hooks/**/*"
+    "src/modules/payroll/hooks/**/*",
+    "src/modules/sales/components/StandardPOS.tsx"
   ]
 }
