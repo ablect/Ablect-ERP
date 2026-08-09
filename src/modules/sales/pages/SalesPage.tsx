@@ -1,5 +1,5 @@
-import ModernSalesPOS from "../components/ModernSalesPOS";
+import StandardPOS from "../components/StandardPOS";
 
 export default function SalesPage() {
-  return <ModernSalesPOS />;
+  return <StandardPOS />;
 }
