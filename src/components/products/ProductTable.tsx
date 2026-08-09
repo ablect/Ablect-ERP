@@ -1,14 +1,22 @@
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronUp, PackageOpen } from "lucide-react";
+import type { Product } from "../../models/Product";
 import type { InventoryItem } from "../../modules/inventory/types/InventoryItem";
 
 function money(value: number) { return `₦${Math.max(0, value).toLocaleString()}`; }
 function statusClass(status: InventoryItem["status"]) { return status === "In Stock" ? "bg-emerald-50 text-emerald-700" : status === "Low Stock" ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"; }
+function normalize(product: InventoryItem | Product): InventoryItem {
+  if (typeof product.id === "string") return product;
+  const id = String(product.id ?? crypto.randomUUID());
+  const status: InventoryItem["status"] = product.quantity <= 0 ? "Out of Stock" : product.quantity <= product.minimumStock ? "Low Stock" : "In Stock";
+  return { id, sku: product.sku, barcode: product.barcode, itemName: product.name, category: product.category, warehouse: "Main Warehouse", unit: product.unit, quantity: product.quantity, reorderLevel: product.minimumStock, unitCost: product.costPrice, sellingPrice: product.sellingPrice, status, brand: product.brand };
+}
 
-type Props = { products: InventoryItem[]; selectedIds: string[]; onToggleSelect: (id: string) => void; onToggleAll: (checked: boolean) => void; onOpen: (product: InventoryItem) => void; };
+type Props = { products: Array<InventoryItem | Product>; selectedIds?: string[]; onToggleSelect?: (id: string) => void; onToggleAll?: (checked: boolean) => void; onOpen?: (product: InventoryItem) => void; };
 
-export default function ProductTable({ products, selectedIds, onToggleSelect, onToggleAll, onOpen }: Props) {
+export default function ProductTable({ products: sourceProducts, selectedIds = [], onToggleSelect = () => undefined, onToggleAll = () => undefined, onOpen }: Props) {
+  const products = useMemo(() => sourceProducts.map(normalize), [sourceProducts]);
   const [sorting, setSorting] = useState<SortingState>([]);
   const allSelected = products.length > 0 && products.every((item) => selectedIds.includes(item.id));
   const columns = useMemo<ColumnDef<InventoryItem>[]>(() => [
@@ -23,5 +31,5 @@ export default function ProductTable({ products, selectedIds, onToggleSelect, on
   ], [allSelected, onToggleAll, onToggleSelect, selectedIds]);
   const table = useReactTable({ data: products, columns, state: { sorting }, onSortingChange: setSorting, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel() });
   if (!products.length) return <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-16 text-center"><PackageOpen className="mx-auto text-slate-300" size={44} /><h2 className="mt-4 text-lg font-black">No products found</h2></div>;
-  return <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><p className="text-sm font-bold text-slate-800">Catalog data grid</p><span className="text-xs font-semibold text-slate-400">{products.length.toLocaleString()} rows</span></div><div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-sm"><thead className="bg-slate-50 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{table.getHeaderGroups().map((group) => <tr key={group.id}>{group.headers.map((header) => <th key={header.id} className="px-4 py-3">{header.isPlaceholder ? null : header.id === "select" ? flexRender(header.column.columnDef.header, header.getContext()) : <button disabled={!header.column.getCanSort()} onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-1">{flexRender(header.column.columnDef.header, header.getContext())}{header.column.getIsSorted() === "asc" ? <ArrowUp size={12} /> : header.column.getIsSorted() === "desc" ? <ArrowDown size={12} /> : header.column.getCanSort() ? <ChevronUp size={12} className="opacity-30" /> : null}</button>}</th>)}</tr>)}</thead><tbody>{table.getRowModel().rows.map((row) => <tr key={row.id} onClick={() => onOpen(row.original)} className="cursor-pointer border-t border-slate-100 transition hover:bg-indigo-50/40">{row.getVisibleCells().map((cell) => <td key={cell.id} className="px-4 py-4">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}</tbody></table></div></div>;
+  return <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><p className="text-sm font-bold text-slate-800">Catalog data grid</p><span className="text-xs font-semibold text-slate-400">{products.length.toLocaleString()} rows</span></div><div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-sm"><thead className="bg-slate-50 text-left text-[11px] font-black uppercase tracking-wider text-slate-400">{table.getHeaderGroups().map((group) => <tr key={group.id}>{group.headers.map((header) => <th key={header.id} className="px-4 py-3">{header.isPlaceholder ? null : header.id === "select" ? flexRender(header.column.columnDef.header, header.getContext()) : <button disabled={!header.column.getCanSort()} onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-1">{flexRender(header.column.columnDef.header, header.getContext())}{header.column.getIsSorted() === "asc" ? <ArrowUp size={12} /> : header.column.getIsSorted() === "desc" ? <ArrowDown size={12} /> : header.column.getCanSort() ? <ChevronUp size={12} className="opacity-30" /> : null}</button>}</th>)}</tr>)}</thead><tbody>{table.getRowModel().rows.map((row) => <tr key={row.id} onClick={() => onOpen?.(row.original)} className={`border-t border-slate-100 transition ${onOpen ? "cursor-pointer hover:bg-indigo-50/40" : ""}`}>{row.getVisibleCells().map((cell) => <td key={cell.id} className="px-4 py-4">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}</tbody></table></div></div>;
 }
