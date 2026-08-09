@@ -1,18 +1,28 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import { useClientConfig } from "../hooks/useClientConfig";
 import "./LoginPage.css";
 
 export default function LoginPage() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { config } = useClientConfig();
   const [email, setEmail] = useState("admin@ablect.local");
   const [password, setPassword] = useState("admin1234");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [databaseConnected, setDatabaseConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!window.ablectDesktop?.getDatabaseStatus) return;
+    void window.ablectDesktop.getDatabaseStatus().then((status) => {
+      setDatabaseConnected(status.connected);
+    });
+  }, []);
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -42,7 +52,11 @@ export default function LoginPage() {
       <section className="login-panel">
         <div className="login-brand">
           <div className="login-brand-mark">
-            <Sparkles size={22} />
+            {config.logoDataUrl ? (
+              <img src={config.logoDataUrl} alt="" width={34} height={34} />
+            ) : (
+              <Sparkles size={22} />
+            )}
           </div>
           <div>
             <p>ABLECT</p>
@@ -53,10 +67,10 @@ export default function LoginPage() {
         <div className="login-content">
           <div className="login-intro">
             <div className="login-badge">
-              <ShieldCheck size={15} /> Secure workspace
+              <ShieldCheck size={15} /> Secure local workspace
             </div>
-            <h1>Welcome back.</h1>
-            <p>Sign in to manage your business from one intelligent workspace.</p>
+            <h1>Welcome to {config.businessName}.</h1>
+            <p>Sign in to manage your business from one intelligent local workspace.</p>
           </div>
 
           <form className="login-form" onSubmit={submit}>
@@ -106,14 +120,16 @@ export default function LoginPage() {
           </form>
 
           <div className="login-demo-note">
-            <strong>Local prototype</strong>
-            <span>admin@ablect.local · admin1234</span>
+            <strong>Local installation</strong>
+            <span>
+              Database {databaseConnected === true ? "connected" : databaseConnected === false ? "not connected" : "checking..."}
+            </span>
           </div>
         </div>
 
         <footer className="login-footer">
           <span>ABLECT Business Suite ERP</span>
-          <span>Private business workspace</span>
+          <span>Powered by Ablect Technologies</span>
         </footer>
       </section>
     </main>
