@@ -1,0 +1,78 @@
+export type Permission = {
+  module: string;
+  view: boolean;
+  create: boolean;
+  edit: boolean;
+  delete: boolean;
+};
+
+export type AuthSession = {
+  token: string;
+  expiresAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    roleId: string | null;
+    permissions: Permission[];
+  };
+};
+
+type DatabaseStatus = { connected: boolean; error: string | null };
+
+type DesktopApi = {
+  getClientConfig: () => Promise<unknown>;
+  getDatabaseStatus: () => Promise<DatabaseStatus>;
+  auth: {
+    login: (identifier: string, password: string) => Promise<AuthSession>;
+    validate: (token: string) => Promise<AuthSession["user"] | null>;
+    logout: (token: string) => Promise<void>;
+  };
+  erp: {
+    products: {
+      list: (search?: string) => Promise<unknown[]>;
+      create: (payload: unknown) => Promise<unknown>;
+      update: (payload: unknown) => Promise<unknown>;
+      delete: (id: string) => Promise<unknown>;
+    };
+    customers: {
+      list: (search?: string) => Promise<unknown[]>;
+      create: (payload: unknown) => Promise<unknown>;
+      update: (payload: unknown) => Promise<unknown>;
+      delete: (id: string) => Promise<unknown>;
+    };
+    suppliers: { list: (search?: string) => Promise<unknown[]> };
+    warehouses: { list: () => Promise<unknown[]> };
+    dashboard: { metrics: () => Promise<unknown> };
+    sales: { create: (payload: unknown) => Promise<unknown>; list: () => Promise<unknown[]> };
+    purchases: { receive: (payload: unknown) => Promise<unknown>; list: () => Promise<unknown[]> };
+    stock: {
+      transfer: (payload: unknown) => Promise<unknown>;
+      movements: () => Promise<unknown[]>;
+      reserve: (payload: unknown) => Promise<unknown>;
+      release: (payload: unknown) => Promise<unknown>;
+    };
+    crm: {
+      opportunities: () => Promise<unknown[]>;
+      activities: () => Promise<unknown[]>;
+    };
+    hr: { employees: () => Promise<unknown[]>; attendance: () => Promise<unknown[]> };
+    payroll: { runs: () => Promise<unknown[]> };
+    admin: { users: () => Promise<unknown[]>; roles: () => Promise<unknown[]>; auditLogs: () => Promise<unknown[]> };
+    reports: { summary: (from?: string, to?: string) => Promise<unknown> };
+  };
+};
+
+export function desktopApi(): DesktopApi | null {
+  if (typeof window === "undefined") return null;
+  return window.ablectDesktop as unknown as DesktopApi;
+}
+
+export function requireDesktopApi(): DesktopApi {
+  const api = desktopApi();
+  if (!api) {
+    throw new Error("Ablect Desktop bridge is unavailable. Start the ERP through Electron.");
+  }
+  return api;
+}
