@@ -1,7 +1,8 @@
 import type { Warehouse } from "../types/Warehouse";
-function api(){if(!window.ablectDesktop?.erp?.warehouses)throw new Error("Desktop data bridge is unavailable.");return window.ablectDesktop.erp.warehouses;}
+import { requireDesktopApi } from "../../../lib/desktopApi";
+function mapWarehouse(row:unknown):Warehouse{const w=row as Record<string,unknown>;return{id:String(w.id),code:String(w.code??""),name:String(w.name??""),location:String(w.address??""),manager:"Warehouse Team",capacity:10000,currentStock:Number(w.total_units??0),status:w.is_active?"Active":"Inactive"};}
 export const warehouseService={
- async getAll():Promise<Warehouse[]>{const rows=await api().list() as Array<Record<string,unknown>>;return rows.map((row)=>({id:String(row.id),code:String(row.code??""),name:String(row.name??""),location:String(row.address??""),manager:"Warehouse Team",capacity:10000,currentStock:Number(row.total_units??0),status:row.is_active?"Active":"Inactive"}));},
- async create(warehouse:Warehouse):Promise<Warehouse[]>{return (await api().create(warehouse)) as Warehouse[];},
+ async getAll():Promise<Warehouse[]>{return (await requireDesktopApi().erp.warehouses.list()).map(mapWarehouse);},
+ async create(warehouse:Warehouse):Promise<Warehouse[]>{return (await requireDesktopApi().erp.warehouses.create(warehouse) as unknown[]).map(mapWarehouse);},
  async delete(id:string){throw new Error(`Warehouse ${id} deletion is disabled. Deactivate warehouses instead.`);},
 };
