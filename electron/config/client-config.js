@@ -31,6 +31,9 @@ function readJsonFile(filePath) {
  * 1. ABLECT_CLIENT_CONFIG_PATH environment variable (installer/admin override)
  * 2. Electron userData/client-config.json (recommended packaged location)
  * 3. Project-root client-config.json (development fallback)
+ * 4. Built-in non-secret defaults
+ *
+ * Database password may additionally be supplied through ABLECT_DB_PASSWORD.
  */
 export function loadClientConfig(userDataPath) {
   const explicitPath = process.env.ABLECT_CLIENT_CONFIG_PATH;
@@ -48,11 +51,27 @@ export function loadClientConfig(userDataPath) {
     DATABASE: {
       ...DEFAULT_CONFIG.DATABASE,
       ...(fileConfig?.DATABASE ?? {}),
+      ...(process.env.ABLECT_DB_HOST ? { HOST: process.env.ABLECT_DB_HOST } : {}),
+      ...(process.env.ABLECT_DB_PORT ? { PORT: Number(process.env.ABLECT_DB_PORT) } : {}),
+      ...(process.env.ABLECT_DB_NAME ? { NAME: process.env.ABLECT_DB_NAME } : {}),
+      ...(process.env.ABLECT_DB_USER ? { USER: process.env.ABLECT_DB_USER } : {}),
+      ...(process.env.ABLECT_DB_PASSWORD ? { PASSWORD: process.env.ABLECT_DB_PASSWORD } : {}),
+      ...(process.env.ABLECT_DB_CONNECTION_LIMIT
+        ? { CONNECTION_LIMIT: Number(process.env.ABLECT_DB_CONNECTION_LIMIT) }
+        : {}),
     },
   };
 
   if (!merged.CLIENT_BUSINESS_NAME?.trim()) {
     throw new Error("CLIENT_BUSINESS_NAME is required in client-config.json");
+  }
+  if (!merged.DATABASE.HOST || !merged.DATABASE.PORT || !merged.DATABASE.NAME || !merged.DATABASE.USER) {
+    throw new Error("Database host, port, name and user are required in client-config.json");
+  }
+  if (!merged.DATABASE.PASSWORD) {
+    throw new Error(
+      `MySQL password is missing. Set DATABASE.PASSWORD in ${configPath ?? "client-config.json"} or set ABLECT_DB_PASSWORD.`,
+    );
   }
 
   return {
