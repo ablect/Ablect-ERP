@@ -1,51 +1,36 @@
-import db from "./db.js";
+import fs from "node:fs/promises";
+import path from "node:path";
 
-export function initializeDatabase() {
+/**
+ * Initialize the minimum shared schema required by the ERP runtime.
+ *
+ * The schema is intentionally additive: every table uses IF NOT EXISTS so
+ * existing client data is not dropped when the application starts.
+ */
+export async function initializeDatabase(pool) {
+  const schemaPath = path.join(process.cwd(), "electron", "database", "schema.sql");
+  const sql = await fs.readFile(schemaPath, "utf8");
 
-db.exec(`
+  // MySQL can execute the complete script when multipleStatements is enabled,
+  // but we deliberately keep it disabled on the pool. Split only on the simple
+  // semicolon-delimited statements used by our checked-in schema file.
+  const statements = sql
+    .split(/;\s*(?:\r?\n|$)/)
+    .map((statement) => statement.trim())
+    .filter(Boolean);
 
-CREATE TABLE IF NOT EXISTS users(
-
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-username TEXT UNIQUE,
-
-password TEXT,
-
-fullname TEXT,
-
-role TEXT,
-
-createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-
-);
-
-CREATE TABLE IF NOT EXISTS products(
-
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-barcode TEXT UNIQUE,
-
-name TEXT NOT NULL,
-
-category TEXT,
-
-unit TEXT,
-
-costPrice REAL,
-
-sellingPrice REAL,
-
-quantity INTEGER DEFAULT 0,
-
-minimumStock INTEGER DEFAULT 5,
-
-createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-
-);
-
-`);
-
-console.log("Database initialized.");
-
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    for (const statement of statements) {
+      await connection.query(statement);
+    }
+    await connection.commit();
+    console.log("MySQL database initialized.");
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
