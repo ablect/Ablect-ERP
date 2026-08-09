@@ -1,0 +1,13 @@
+{
+  "CLIENT_BUSINESS_NAME": "Example Supermarket",
+  "CLIENT_LOGO_PATH": "C:/ProgramData/AblectBusinessSuite/client/logo.png",
+  "INSTALLATION_DATE": "2026-08-09",
+  "DATABASE": {
+    "HOST": "127.0.0.1",
+    "PORT": 3306,
+    "NAME": "ablect_business_suite",
+    "USER": "ablect_app",
+    "PASSWORD": "CHANGE_THIS_TO_A_STRONG_LOCAL_PASSWORD",
+    "CONNECTION_LIMIT": 10
+  }
+}
