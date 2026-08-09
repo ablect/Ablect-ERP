@@ -19,10 +19,11 @@ import PurchasePage from "../modules/purchases/pages/PurchasePage";
 import GoodsReceivedNotePage from "../modules/purchases/pages/GoodsReceivedNotePage";
 import PurchaseRequisitionPage from "../modules/purchases/pages/PurchaseRequisitionPage";
 import WarehousePage from "../modules/warehouse/pages/WarehousePage";
-import PayrollPage from "../modules/payroll/components/PayrollPage";
+import PayrollPage from "../modules/payroll/pages/PayrollPage";
 import StockMovementPage from "../modules/stock/pages/StockMovementPage";
 import CRMDashboardPage from "../modules/crm/pages/CRMDashboardPage";
 import OpportunityPage from "../modules/crm/pages/OpportunityPage";
+import ActivityPage from "../modules/crm/pages/ActivityPage";
 import UserPage from "../modules/users/pages/UserPage";
 import EmployeePage from "../modules/hr/pages/EmployeePage";
 
@@ -55,6 +56,7 @@ export default function AppRouter() {
         <Route path="/settings" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />
         <Route path="/crm" element={<ProtectedPage><CRMDashboardPage /></ProtectedPage>} />
         <Route path="/crm/opportunities" element={<ProtectedPage><OpportunityPage /></ProtectedPage>} />
+        <Route path="/crm/activities" element={<ProtectedPage><ActivityPage /></ProtectedPage>} />
         <Route path="/users" element={<ProtectedPage><UserPage /></ProtectedPage>} />
         <Route path="/hr" element={<ProtectedPage><EmployeePage /></ProtectedPage>} />
         <Route path="/payroll" element={<ProtectedPage><PayrollPage /></ProtectedPage>} />
