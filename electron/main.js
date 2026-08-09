@@ -65,7 +65,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      preload: path.join(app.getAppPath(), "electron", "preload.cjs"),
+      preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs"),
     },
   });
 
