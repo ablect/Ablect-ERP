@@ -1,23 +1,8 @@
 export {};
-
 declare global {
-  interface AblectClientConfig { businessName:string; installationDate:string; logoPath:string|null; logoDataUrl:string|null; configPath:string; }
-  interface AblectDatabaseStatus { connected:boolean; error:string|null; }
-  interface AblectPermission { module:string; view:boolean; create:boolean; edit:boolean; delete:boolean; }
-  interface AblectAuthSession { token:string; expiresAt:string; user:{id:string;name:string;email:string;role:string;roleId:string|null;permissions:AblectPermission[]}; }
-  interface Window {
-    ablectDesktop?: {
-      getClientConfig:()=>Promise<AblectClientConfig>; getDatabaseStatus:()=>Promise<AblectDatabaseStatus>;
-      auth:{login:(identifier:string,password:string)=>Promise<AblectAuthSession>;validate:(token:string)=>Promise<AblectAuthSession["user"]|null>;logout:(token:string)=>Promise<void>};
-      erp:{
-        products:{list:(search?:string)=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>;update:(payload:unknown)=>Promise<unknown>;delete:(id:string)=>Promise<unknown>};
-        customers:{list:(search?:string)=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>;update:(payload:unknown)=>Promise<unknown>;delete:(id:string)=>Promise<unknown>};
-        suppliers:{list:(search?:string)=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>}; warehouses:{list:()=>Promise<unknown[]>}; dashboard:{metrics:()=>Promise<unknown>};
-        sales:{create:(payload:unknown)=>Promise<unknown>;list:()=>Promise<unknown[]>}; purchases:{receive:(payload:unknown)=>Promise<unknown>;list:()=>Promise<unknown[]>};
-        stock:{transfer:(payload:unknown)=>Promise<unknown>;movements:()=>Promise<unknown[]>;reserve:(payload:unknown)=>Promise<unknown>;release:(payload:unknown)=>Promise<unknown>};
-        crm:{opportunities:()=>Promise<unknown[]>;activities:()=>Promise<unknown[]>}; hr:{employees:()=>Promise<unknown[]>;attendance:()=>Promise<unknown[]>}; payroll:{runs:()=>Promise<unknown[]>};
-        admin:{users:()=>Promise<unknown[]>;roles:()=>Promise<unknown[]>;auditLogs:()=>Promise<unknown[]>}; reports:{summary:(from?:string,to?:string)=>Promise<unknown>};
-      };
-    };
-  }
+ interface AblectClientConfig{businessName:string;installationDate:string;logoPath:string|null;logoDataUrl:string|null;configPath:string}
+ interface AblectDatabaseStatus{connected:boolean;error:string|null}
+ interface AblectPermission{module:string;view:boolean;create:boolean;edit:boolean;delete:boolean}
+ interface AblectAuthSession{token:string;expiresAt:string;user:{id:string;name:string;email:string;role:string;roleId:string|null;permissions:AblectPermission[]}}
+ interface Window{ablectDesktop?:{getClientConfig:()=>Promise<AblectClientConfig>;getDatabaseStatus:()=>Promise<AblectDatabaseStatus>;auth:{login:(identifier:string,password:string)=>Promise<AblectAuthSession>;validate:(token:string)=>Promise<AblectAuthSession["user"]|null>;logout:(token:string)=>Promise<void>};erp:{products:{list:(search?:string)=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>;update:(payload:unknown)=>Promise<unknown>;delete:(id:string)=>Promise<unknown>};customers:{list:(search?:string)=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>;update:(payload:unknown)=>Promise<unknown>;delete:(id:string)=>Promise<unknown>};suppliers:{list:(search?:string)=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>};warehouses:{list:()=>Promise<unknown[]>;create:(payload:unknown)=>Promise<unknown>};dashboard:{metrics:()=>Promise<unknown>};sales:{create:(payload:unknown)=>Promise<unknown>;list:()=>Promise<unknown[]>};purchases:{create:(payload:unknown)=>Promise<unknown>;receive:(payload:unknown)=>Promise<unknown>;list:()=>Promise<unknown[]>};stock:{transfer:(payload:unknown)=>Promise<unknown>;movements:()=>Promise<unknown[]>;reserve:(payload:unknown)=>Promise<unknown>;release:(payload:unknown)=>Promise<unknown>};crm:{opportunities:()=>Promise<unknown[]>;activities:()=>Promise<unknown[]>};hr:{employees:()=>Promise<unknown[]>;attendance:()=>Promise<unknown[]>};payroll:{runs:()=>Promise<unknown[]>};admin:{users:()=>Promise<unknown[]>;roles:()=>Promise<unknown[]>;auditLogs:()=>Promise<unknown[]>};reports:{summary:(from?:string,to?:string)=>Promise<unknown>}}}}
 }
