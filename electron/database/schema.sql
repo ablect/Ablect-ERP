@@ -1,7 +1,3 @@
-CREATE DATABASE IF NOT EXISTS ablect_business_suite CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE ablect_business_suite;
-
 CREATE TABLE IF NOT EXISTS client_settings (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   business_name VARCHAR(255) NOT NULL,
