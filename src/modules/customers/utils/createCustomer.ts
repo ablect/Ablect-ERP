@@ -6,7 +6,7 @@ export function createCustomer(
   phone: string,
   address: string,
 ): Customer {
-  const now = new Date();
+  const now = new Date().toISOString();
 
   return {
     id: crypto.randomUUID(),
