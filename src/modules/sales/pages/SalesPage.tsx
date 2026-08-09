@@ -1,47 +1,101 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { Banknote, Barcode, Camera, Check, CreditCard, GripVertical, ImagePlus, Minus, PackagePlus, Phone, Plus, Printer, RotateCcw, Search, ShoppingCart, Smartphone, Trash2, UserPlus, Users, Wallet, X } from "lucide-react";
+import { toast } from "sonner";
+import Modal from "../../../components/ui/Modal";
+import PageContainer from "../../../components/ui/PageContainer";
+import { useAuth } from "../../../auth/AuthContext";
+import { inventoryService } from "../../inventory/services/InventoryService";
+import { useInventoryStore } from "../../inventory/store/InventoryStore";
+import type { InventoryItem } from "../../inventory/types/InventoryItem";
+import { createCustomerCode, validateCustomer } from "../../crm/services/CustomerService";
+import { useCustomerStore } from "../../crm/store/CustomerStore";
+import type { Customer } from "../../crm/types/customer";
+import { useSalesStore } from "../store/SalesStore";
+import { useSalesCartStore, type CartItem, type PaymentMethod, type SaleMode } from "../store/SalesCartStore";
 
-import SectionTitle from "../../../components/ui/SectionTitle";
+const SALE_MODES: SaleMode[] = ["Walk-in", "Table #", "Room #", "Online"];
+const PAYMENT_METHODS: PaymentMethod[] = ["Cash", "Transfer", "POS", "Wallet", "Split Payment"];
+const money = (value: number) => `₦${value.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-import SalesOverview from "../components/SalesOverview";
-import NewSaleButton from "../components/NewSaleButton";
-import EmptySales from "../components/EmptySales";
-import SaleForm from "../components/SaleForm";
-import SalesTable from "../components/SalesTable";
+function ProductCard({ product, onAdd }: { product: InventoryItem; onAdd: () => void }) {
+  return <button type="button" disabled={product.quantity <= 0} onClick={onAdd} className="group min-h-36 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50">
+    <div className="mb-3 flex h-16 items-center justify-center rounded-xl bg-slate-100 text-slate-400"><ShoppingCart size={28} /></div>
+    <div className="truncate text-sm font-semibold text-slate-900">{product.itemName}</div>
+    <div className="mt-1 flex items-center justify-between gap-2"><span className="text-sm font-bold">{money(product.sellingPrice)}</span><span className="text-[11px] text-slate-500">{product.quantity} in stock</span></div>
+  </button>;
+}
 
-import { useSales } from "../hooks/useSales";
+function CartRow({ item, index, onOptions, onDelete, onQuantity, onDragStart, onDrop }: { item: CartItem; index: number; onOptions: () => void; onDelete: () => void; onQuantity: (value: number) => void; onDragStart: (event: DragEvent<HTMLDivElement>) => void; onDrop: (event: DragEvent<HTMLDivElement>) => void }) {
+  const touchStart = useRef<number | null>(null);
+  const [swiping, setSwiping] = useState(false);
+  return <div draggable onDragStart={onDragStart} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} onTouchStart={(event) => { touchStart.current = event.changedTouches[0]?.clientX ?? null; }} onTouchMove={(event) => { if (touchStart.current !== null) setSwiping((event.changedTouches[0]?.clientX ?? 0) - touchStart.current < -55); }} onTouchEnd={(event) => { if (touchStart.current !== null && (event.changedTouches[0]?.clientX ?? 0) - touchStart.current < -90) onDelete(); touchStart.current = null; setSwiping(false); }} className={`relative flex items-center gap-2 rounded-xl border bg-white p-3 transition ${swiping ? "-translate-x-6 border-red-200" : "border-slate-200"}`}>
+    <GripVertical size={17} className="shrink-0 cursor-grab text-slate-300" />
+    <div className="min-w-0 flex-1"><button type="button" onClick={onOptions} className="block max-w-full truncate text-left text-sm font-semibold">{item.name}</button><div className="mt-1 text-xs text-slate-500">{money(item.price)} {item.discountPercent > 0 ? `· ${item.discountPercent}% off` : ""}</div></div>
+    <div className="flex items-center rounded-lg border bg-slate-50"><button type="button" className="p-2 text-slate-500" onClick={() => onQuantity(item.quantity - 1)}><Minus size={14} /></button><button type="button" className="min-w-8 px-1 text-center text-sm font-bold" onClick={onOptions}>{item.quantity}</button><button type="button" className="p-2 text-slate-500" onClick={() => onQuantity(item.quantity + 1)}><Plus size={14} /></button></div>
+    <button type="button" className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" onClick={onDelete}><Trash2 size={16} /></button><span className="absolute -bottom-1 left-10 text-[9px] text-slate-300">#{index + 1}</span>
+  </div>;
+}
+
+function CustomerModal({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (customer: Customer) => void }) {
+  const customers = useCustomerStore((state) => state.customers);
+  const addCustomer = useCustomerStore((state) => state.addCustomer);
+  const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [email, setEmail] = useState("");
+  function save() {
+    const draft: Partial<Customer> = { name, phone, email, type: "individual", status: "active", creditLimit: 0, outstandingBalance: 0 };
+    const errors = validateCustomer(draft); if (errors.length) { toast.error(errors[0]); return; }
+    const now = new Date().toISOString();
+    const customer: Customer = { id: crypto.randomUUID(), customerCode: createCustomerCode(customers), name: name.trim(), type: "individual", phone: phone.trim(), email: email.trim(), address: "", city: "", state: "", status: "active", creditLimit: 0, outstandingBalance: 0, createdAt: now, updatedAt: now };
+    addCustomer(customer); onCreated(customer); setName(""); setPhone(""); setEmail(""); onClose();
+  }
+  return <Modal open={open} title="Quick Add Customer" onClose={onClose}><div className="grid gap-4 md:grid-cols-2"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Customer name *" className="rounded-xl border px-3 py-3" /><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number *" className="rounded-xl border px-3 py-3" autoFocus /><input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="rounded-xl border px-3 py-3 md:col-span-2" /></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl border px-4 py-2">Cancel</button><button type="button" onClick={save} className="rounded-xl bg-slate-950 px-5 py-2 font-semibold text-white">Save Customer</button></div></Modal>;
+}
 
 export default function SalesPage() {
-  const [showForm, setShowForm] =
-    useState(false);
+  const { user } = useAuth();
+  const products = useInventoryStore((state) => state.items); const setInventory = useInventoryStore((state) => state.setItems);
+  const customers = useCustomerStore((state) => state.customers); const updateCustomer = useCustomerStore((state) => state.updateCustomer);
+  const addSale = useSalesStore((state) => state.addSale);
+  const { items, saleMode, saleReference, customerId, paymentMethod, heldSales, addItem, updateQuantity, updateItem, removeItem, reorderItems, setSaleMode, setSaleReference, setCustomerId, setPaymentMethod, holdSale, recallSale, clearCart } = useSalesCartStore();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState(""); const [category, setCategory] = useState("All"); const [showProductModal, setShowProductModal] = useState(false); const [showCustomerModal, setShowCustomerModal] = useState(false); const [optionsItemId, setOptionsItemId] = useState<string | null>(null); const [dragIndex, setDragIndex] = useState<number | null>(null); const [showScanner, setShowScanner] = useState(false); const [showPayment, setShowPayment] = useState(false); const [busy, setBusy] = useState(false); const [phone, setPhone] = useState("");
+  const [newProduct, setNewProduct] = useState({ name: "", sku: "", category: "General", price: "", quantity: "0" });
+  const categories = useMemo(() => ["All", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))], [products]);
+  const filteredProducts = useMemo(() => { const q = query.trim().toLowerCase(); return products.filter((p) => (category === "All" || p.category === category) && (!q || p.itemName.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))); }, [products, query, category]);
+  const customer = customerId ? customers.find((c) => c.id === customerId) : undefined; const selectedOptionsItem = optionsItemId ? items.find((i) => i.productId === optionsItemId) : undefined;
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0); const discount = items.reduce((sum, item) => sum + item.price * item.quantity * item.discountPercent / 100, 0); const taxRate = 0; const tax = (subtotal - discount) * taxRate; const total = Math.max(0, subtotal - discount + tax);
 
-  const { sales } = useSales();
+  useEffect(() => { searchRef.current?.focus(); function shortcut(event: KeyboardEvent) { if (event.key === "F1") { event.preventDefault(); searchRef.current?.focus(); } if (event.key === "F2") { event.preventDefault(); setPaymentMethod("Cash"); setShowPayment(true); } if (event.key === "F4") { event.preventDefault(); holdSale(); toast.success("Sale held"); } } window.addEventListener("keydown", shortcut); return () => window.removeEventListener("keydown", shortcut); }, [holdSale, setPaymentMethod]);
+  function addProduct(product: InventoryItem) { addItem({ productId: product.id, sku: product.sku, name: product.itemName, category: product.category, price: product.sellingPrice, stockQty: product.quantity }); }
+  function lookupCustomer(value: string) { setPhone(value); const found = customers.find((c) => c.phone.replace(/\D/g, "") === value.replace(/\D/g, "")); if (found) { setCustomerId(found.id); toast.success(`Customer linked: ${found.name}`); } }
+  async function createProduct() {
+    const price = Number(newProduct.price); const quantity = Number(newProduct.quantity); if (!newProduct.name.trim() || !newProduct.sku.trim() || !Number.isFinite(price)) { toast.error("Enter product name, SKU and price."); return; }
+    const item: InventoryItem = { id: crypto.randomUUID(), sku: newProduct.sku.trim(), itemName: newProduct.name.trim(), category: newProduct.category.trim() || "General", warehouse: "Default", unit: "PCS", quantity, reorderLevel: 5, unitCost: price, sellingPrice: price, status: quantity <= 0 ? "Out of Stock" : quantity <= 5 ? "Low Stock" : "In Stock" };
+    const next = await inventoryService.create(item); setInventory(next); setShowProductModal(false); setNewProduct({ name: "", sku: "", category: "General", price: "", quantity: "0" }); toast.success("Product added");
+  }
+  async function charge() {
+    if (!items.length) { toast.error("Add at least one item."); return; } setBusy(true);
+    try {
+      let nextInventory = products; for (const item of items) nextInventory = await inventoryService.issueStock(item.productId, item.quantity); setInventory(nextInventory);
+      const saleItems = items.map((item) => ({ productId: item.productId, sku: item.sku, name: item.name, quantity: item.quantity, unitPrice: item.price, discountPercent: item.discountPercent, discountAmount: item.price * item.quantity * item.discountPercent / 100, notes: item.notes, modifiers: item.modifiers }));
+      addSale({ id: crypto.randomUUID(), invoiceNumber: `SAL-${Date.now()}`, customerId: customer?.id ?? "walk-in", date: new Date().toISOString(), total, status: "Completed", staffId: user?.id, paymentMethod, saleType: saleMode, items: saleItems } as never);
+      if (customer) updateCustomer(customer.id, { outstandingBalance: customer.outstandingBalance });
+      clearCart(); setShowPayment(false); toast.success("Sale charged successfully");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to complete sale."); } finally { setBusy(false); }
+  }
 
-  return (
-    <div className="space-y-8">
-      <SectionTitle
-        title="Sales"
-        subtitle="Manage all customer sales."
-      />
-
-      <SalesOverview />
-
-      <div className="flex justify-end">
-        <NewSaleButton
-          onClick={() =>
-            setShowForm(true)
-          }
-        />
-      </div>
-
-      {showForm && (
-        <SaleForm />
-      )}
-
-      {sales.length === 0 ? (
-        <EmptySales />
-      ) : (
-        <SalesTable sales={sales} />
-      )}
+  return <PageContainer><div className="flex min-h-[calc(100vh-120px)] flex-col gap-4">
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm"><div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-slate-100 px-3 py-2"><Search size={18} className="text-slate-400" /><input ref={searchRef} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Scan barcode or search product / customer..." className="min-w-0 flex-1 bg-transparent text-sm outline-none" /><kbd className="hidden rounded bg-white px-2 py-1 text-[10px] text-slate-400 md:block">F1</kbd></div><button type="button" onClick={() => setShowScanner(true)} className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold"><Barcode size={17} /> Scan</button><div className="text-right"><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Staff</div><div className="text-sm font-semibold">{user?.name ?? "Administrator"}</div></div></div>
+    <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[30%_45%_25%] lg:grid-cols-[34%_40%_26%]">
+      <section className="min-h-0 overflow-hidden rounded-2xl border bg-slate-50"><div className="border-b bg-white p-4"><div className="mb-3 flex items-center justify-between"><div><h2 className="text-base font-bold">Products</h2><p className="text-xs text-slate-500">Tap an item to add</p></div><button type="button" onClick={() => setShowProductModal(true)} className="rounded-xl bg-slate-950 p-2 text-white"><PackagePlus size={18} /></button></div><div className="flex gap-2 overflow-x-auto pb-1">{categories.map((entry) => <button key={entry} type="button" onClick={() => setCategory(entry)} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${category === entry ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600"}`}>{entry}</button>)}</div></div><div className="grid max-h-[calc(100vh-290px)] grid-cols-2 gap-3 overflow-y-auto p-4 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">{filteredProducts.map((p) => <ProductCard key={p.id} product={p} onAdd={() => addProduct(p)} />)}{!filteredProducts.length && <div className="col-span-full py-16 text-center text-sm text-slate-400">No products found.</div>}</div><div className="flex gap-2 border-t bg-white p-3"><button type="button" onClick={() => setShowScanner(true)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold"><Camera size={15} /> Barcode</button><button type="button" onClick={() => setShowCustomerModal(true)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold"><Users size={15} /> Customer</button><button type="button" className="flex items-center justify-center rounded-xl border px-3 py-2"><ImagePlus size={15} /></button></div></section>
+      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-white"><div className="border-b p-4"><div className="flex items-center justify-between gap-3"><div><h2 className="text-base font-bold">Active Sale</h2><p className="text-xs text-slate-500">{items.length} line item{items.length === 1 ? "" : "s"}</p></div><div className="flex gap-2"><button type="button" onClick={() => { holdSale(); toast.success("Sale held"); }} className="rounded-xl border px-3 py-2 text-xs font-semibold">Hold <kbd className="ml-1 text-slate-400">F4</kbd></button><button type="button" onClick={recallSale} disabled={!heldSales.length} className="rounded-xl border px-3 py-2 text-xs font-semibold disabled:opacity-40">Recall ({heldSales.length})</button></div></div><div className="mt-3 flex gap-2 overflow-x-auto">{SALE_MODES.map((mode) => <button key={mode} type="button" onClick={() => setSaleMode(mode)} className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold ${saleMode === mode ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600"}`}>{mode}</button>)}{saleMode !== "Walk-in" && <input value={saleReference} onChange={(e) => setSaleReference(e.target.value)} placeholder={`${saleMode} reference`} className="min-w-28 rounded-xl border px-3 py-2 text-xs outline-none" />}</div></div><div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">{items.length ? items.map((item, index) => <CartRow key={item.productId} item={item} index={index} onOptions={() => setOptionsItemId(item.productId)} onDelete={() => removeItem(item.productId)} onQuantity={(value) => updateQuantity(item.productId, value)} onDragStart={() => setDragIndex(index)} onDrop={() => { if (dragIndex !== null) reorderItems(dragIndex, index); setDragIndex(null); }} />) : <div className="flex h-full min-h-56 flex-col items-center justify-center text-center text-slate-400"><ShoppingCart size={38} /><p className="mt-3 text-sm font-semibold">Cart is empty</p><p className="text-xs">Select products from the left panel.</p></div>}</div><div className="border-t bg-slate-50 p-4"><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span>{money(subtotal)}</span></div><div className="flex justify-between"><span className="text-slate-500">Discount</span><span>-{money(discount)}</span></div><div className="flex justify-between"><span className="text-slate-500">Tax</span><span>{money(tax)}</span></div><div className="mt-2 flex justify-between border-t pt-3 text-lg font-bold"><span>Grand Total</span><span>{money(total)}</span></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button type="button" onClick={() => { holdSale(); toast.success("Sale held"); }} className="rounded-xl border py-3 text-sm font-semibold">Hold Sale</button><button type="button" onClick={() => setShowPayment(true)} className="rounded-xl bg-slate-950 py-3 text-sm font-semibold text-white">Charge {money(total)}</button></div></div></section>
+      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-white"><div className="border-b p-4"><div className="flex items-center gap-2"><Users size={18} /><div><h2 className="text-base font-bold">Customer</h2><p className="text-xs text-slate-500">Optional for walk-in sales</p></div></div><div className="mt-3 flex gap-2"><div className="flex flex-1 items-center gap-2 rounded-xl border px-3"><Phone size={15} className="text-slate-400" /><input value={phone} onChange={(e) => lookupCustomer(e.target.value)} placeholder="Phone number" className="min-w-0 flex-1 py-2.5 text-sm outline-none" /></div><button type="button" onClick={() => setShowCustomerModal(true)} className="rounded-xl bg-slate-950 p-3 text-white"><UserPlus size={16} /></button></div>{customer && <div className="mt-3 rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between"><span className="font-semibold">{customer.name}</span><button type="button" onClick={() => { setCustomerId(null); setPhone(""); }}><X size={15} /></button></div><div className="mt-1 text-xs text-slate-500">{customer.phone} · {customer.customerCode}</div></div>}</div><div className="flex-1 p-4"><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-bold">Payment</h3><span className="text-xs text-slate-400">F2 Cash</span></div><div className="grid grid-cols-2 gap-2">{PAYMENT_METHODS.map((method) => <button key={method} type="button" onClick={() => setPaymentMethod(method)} className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs font-semibold ${paymentMethod === method ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200"}`}>{method === "Cash" ? <Banknote size={16} /> : method === "POS" ? <CreditCard size={16} /> : method === "Wallet" ? <Wallet size={16} /> : method === "Transfer" ? <Smartphone size={16} /> : <RotateCcw size={16} />}{method}</button>)}</div></div><div className="border-t p-4"><button type="button" disabled={!items.length} onClick={() => setShowPayment(true)} className="w-full rounded-2xl bg-slate-950 py-4 text-base font-bold text-white disabled:opacity-40">Charge {money(total)}</button><div className="mt-2 grid grid-cols-2 gap-2"><button type="button" className="flex items-center justify-center gap-2 rounded-xl border py-2 text-xs font-semibold"><Printer size={14} /> Print Receipt</button><button type="button" className="rounded-xl border py-2 text-xs font-semibold">WhatsApp</button></div></div></section>
     </div>
-  );
+  </div>
+
+  <Modal open={showProductModal} title="New Product" onClose={() => setShowProductModal(false)}><div className="grid gap-4 md:grid-cols-2"><input value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="Product name" className="rounded-xl border px-3 py-3" /><input value={newProduct.sku} onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })} placeholder="SKU / barcode" className="rounded-xl border px-3 py-3" /><input value={newProduct.category} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })} placeholder="Category" className="rounded-xl border px-3 py-3" /><input type="number" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} placeholder="Selling price" className="rounded-xl border px-3 py-3" /><input type="number" value={newProduct.quantity} onChange={(e) => setNewProduct({ ...newProduct, quantity: e.target.value })} placeholder="Opening stock" className="rounded-xl border px-3 py-3" /></div><div className="mt-5 flex justify-end"><button type="button" onClick={createProduct} className="rounded-xl bg-slate-950 px-5 py-2 font-semibold text-white">Create Product</button></div></Modal>
+  <CustomerModal open={showCustomerModal} onClose={() => setShowCustomerModal(false)} onCreated={(created) => { setCustomerId(created.id); setPhone(created.phone); }} />
+  <Modal open={Boolean(selectedOptionsItem)} title="Item Options" onClose={() => setOptionsItemId(null)}>{selectedOptionsItem && <div className="space-y-4"><div className="font-semibold">{selectedOptionsItem.name}</div><label className="block text-sm">Discount %<input type="number" min="0" max="100" value={selectedOptionsItem.discountPercent} onChange={(e) => updateItem(selectedOptionsItem.productId, { discountPercent: Number(e.target.value) })} className="mt-1 w-full rounded-xl border px-3 py-3" /></label><label className="block text-sm">Notes<textarea value={selectedOptionsItem.notes} onChange={(e) => updateItem(selectedOptionsItem.productId, { notes: e.target.value })} className="mt-1 min-h-24 w-full rounded-xl border px-3 py-3" placeholder="e.g. No Sugar" /></label><div className="flex justify-end"><button type="button" onClick={() => setOptionsItemId(null)} className="rounded-xl bg-slate-950 px-5 py-2 text-sm font-semibold text-white">Done</button></div></div>}</Modal>
+  <Modal open={showScanner} title="Barcode Scanner" onClose={() => setShowScanner(false)}><div className="rounded-2xl bg-slate-950 p-10 text-center text-white"><Camera className="mx-auto" size={42} /><p className="mt-4 font-semibold">Scanner utility ready</p><p className="mt-1 text-sm text-slate-300">The current repository does not expose a camera/scanner service. Use the search field to enter a barcode.</p><button type="button" onClick={() => { setShowScanner(false); searchRef.current?.focus(); }} className="mt-5 rounded-xl bg-white px-5 py-2 text-sm font-semibold text-slate-950">Use Barcode Search</button></div></Modal>
+  <Modal open={showPayment} title="Confirm Payment" onClose={() => setShowPayment(false)}><div className="space-y-4"><div className="rounded-2xl bg-slate-50 p-5"><div className="text-xs text-slate-500">Amount due</div><div className="mt-1 text-3xl font-black">{money(total)}</div><div className="mt-2 text-sm text-slate-500">{paymentMethod} · {customer?.name ?? "Walk-in customer"}</div></div><button type="button" disabled={busy} onClick={charge} className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-4 font-bold text-white disabled:opacity-50">{busy ? "Processing..." : <><Check size={18} /> Confirm Charge</>}</button></div></Modal>
+  </PageContainer>;
 }
