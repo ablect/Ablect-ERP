@@ -1,17 +1,25 @@
 import fs from "node:fs/promises";
 
 /**
- * Initialize the minimum shared schema required by the ERP runtime.
+ * Initialize one or more additive SQL schema files inside a single transaction.
  *
- * The schema is additive: every table uses IF NOT EXISTS, so starting a newer
- * application build does not drop a client's existing data.
+ * Every statement is parameter-free DDL/seed SQL owned by the application.
+ * Files are executed in the order supplied so foreign-key dependencies are
+ * created safely (base tables first, integrated ERP tables second).
  */
-export async function initializeDatabase(pool, schemaPath) {
-  const sql = await fs.readFile(schemaPath, "utf8");
-  const statements = sql
-    .split(/;\s*(?:\r?\n|$)/)
-    .map((statement) => statement.trim())
-    .filter(Boolean);
+export async function initializeDatabase(pool, schemaPaths) {
+  const paths = Array.isArray(schemaPaths) ? schemaPaths : [schemaPaths];
+  const statements = [];
+
+  for (const schemaPath of paths) {
+    const sql = await fs.readFile(schemaPath, "utf8");
+    statements.push(
+      ...sql
+        .split(/;\s*(?:\r?\n|$)/)
+        .map((statement) => statement.trim())
+        .filter(Boolean),
+    );
+  }
 
   const connection = await pool.getConnection();
   try {
@@ -20,7 +28,7 @@ export async function initializeDatabase(pool, schemaPath) {
       await connection.query(statement);
     }
     await connection.commit();
-    console.log("MySQL database initialized.");
+    console.log(`MySQL database initialized (${statements.length} statements).`);
   } catch (error) {
     await connection.rollback();
     throw error;
