@@ -1,45 +1,14 @@
-import { create }
+import { create } from "zustand";
+import type { Purchase } from "../types/Purchase";
 
-from "zustand";
-
-import type {
-
-PurchaseOrder
-
-}
-
-from "../types/PurchaseOrder";
-
-type PurchaseState={
-
-orders:PurchaseOrder[];
-
-setOrders:(
-
-orders:PurchaseOrder[],
-
-)=>void;
-
+type PurchaseState = {
+  orders: Purchase[];
+  purchases: Purchase[];
+  setOrders: (orders: Purchase[]) => void;
 };
 
-export const usePurchaseStore=
-
-create<PurchaseState>((set)=>({
-
-orders:[],
-
-setOrders(
-
-orders,
-
-){
-
-set({
-
-orders,
-
-});
-
-},
-
+export const usePurchaseStore = create<PurchaseState>((set) => ({
+  orders: [],
+  purchases: [],
+  setOrders: (orders) => set({ orders, purchases: orders }),
 }));
