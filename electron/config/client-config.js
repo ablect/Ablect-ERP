@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const DEV_DATABASE_PASSWORD = "AblectLocal!2026";
+
 const DEFAULT_CONFIG = {
   CLIENT_BUSINESS_NAME: "Ablect Business Suite",
   CLIENT_LOGO_PATH: "",
@@ -20,6 +22,10 @@ function readJsonFile(filePath) {
   try {
     return JSON.parse(fs.readFileSync(filePath, "utf8"));
   } catch (error) {
+    if (process.defaultApp) {
+      console.warn(`Ignoring invalid development client configuration at ${filePath}: ${error.message}`);
+      return null;
+    }
     throw new Error(`Invalid client configuration at ${filePath}: ${error.message}`);
   }
 }
@@ -31,9 +37,11 @@ function readJsonFile(filePath) {
  * 1. ABLECT_CLIENT_CONFIG_PATH environment variable (installer/admin override)
  * 2. Electron userData/client-config.json (recommended packaged location)
  * 3. Project-root client-config.json (development fallback)
- * 4. Built-in non-secret defaults
+ * 4. Built-in defaults
  *
- * Database password may additionally be supplied through ABLECT_DB_PASSWORD.
+ * In development, the local setup script provisions the fixed development
+ * MySQL account and password. This also lets a malformed old client-config.json
+ * recover instead of blocking Electron startup.
  */
 export function loadClientConfig(userDataPath) {
   const explicitPath = process.env.ABLECT_CLIENT_CONFIG_PATH;
@@ -45,12 +53,17 @@ export function loadClientConfig(userDataPath) {
 
   const configPath = candidates.find((candidate) => fs.existsSync(candidate));
   const fileConfig = configPath ? readJsonFile(configPath) : null;
+  const isDevelopment = process.defaultApp === true;
+
   const merged = {
     ...DEFAULT_CONFIG,
     ...fileConfig,
     DATABASE: {
       ...DEFAULT_CONFIG.DATABASE,
       ...(fileConfig?.DATABASE ?? {}),
+      ...(isDevelopment && !fileConfig?.DATABASE?.PASSWORD
+        ? { PASSWORD: DEV_DATABASE_PASSWORD }
+        : {}),
       ...(process.env.ABLECT_DB_HOST ? { HOST: process.env.ABLECT_DB_HOST } : {}),
       ...(process.env.ABLECT_DB_PORT ? { PORT: Number(process.env.ABLECT_DB_PORT) } : {}),
       ...(process.env.ABLECT_DB_NAME ? { NAME: process.env.ABLECT_DB_NAME } : {}),
