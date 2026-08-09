@@ -1,21 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  BarChart3,
-  Boxes,
-  CheckCircle2,
-  Command,
-  Grid2X2,
-  List,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Sparkles,
-  Tag,
-  Trash2,
-  Upload,
-} from "lucide-react";
-
+import { BarChart3, Boxes, CheckCircle2, Command, Grid2X2, List, Plus, Search, SlidersHorizontal, Sparkles, Tag, Trash2, Upload } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { inventoryService } from "../../modules/inventory/services/InventoryService";
 import { useInventoryStore } from "../../modules/inventory/store/InventoryStore";
 import type { InventoryItem } from "../../modules/inventory/types/InventoryItem";
@@ -25,6 +11,8 @@ import ProductDrawer from "./ProductDrawer";
 import useProductFeedback from "./useProductFeedback";
 
 type ViewMode = "grid" | "table";
+type Tone = "indigo" | "emerald" | "sky" | "amber";
+type Stat = { label: string; value: string; hint: string; Icon: LucideIcon; tone: Tone };
 
 function statusFor(quantity: number, reorderLevel: number): InventoryItem["status"] {
   if (quantity <= 0) return "Out of Stock";
@@ -37,9 +25,8 @@ function money(value: number) {
 }
 
 function makeProduct(): InventoryItem {
-  const id = crypto.randomUUID();
   return {
-    id,
+    id: crypto.randomUUID(),
     sku: `SKU-${Date.now().toString().slice(-6)}`,
     barcode: "",
     itemName: "New Product",
@@ -57,7 +44,7 @@ function makeProduct(): InventoryItem {
   };
 }
 
-const toneClasses: Record<string, string> = {
+const toneClasses: Record<Tone, string> = {
   indigo: "bg-indigo-50 text-indigo-600",
   emerald: "bg-emerald-50 text-emerald-600",
   sky: "bg-sky-50 text-sky-600",
@@ -128,6 +115,13 @@ export default function ProductDashboard() {
   const lowStock = products.filter((product) => product.status === "Low Stock").length;
   const outOfStock = products.filter((product) => product.status === "Out of Stock").length;
 
+  const stats: Stat[] = [
+    { label: "Products", value: products.length.toLocaleString(), hint: "Master catalog", Icon: Boxes, tone: "indigo" },
+    { label: "Stock cost", value: money(stockValue), hint: "Current inventory cost", Icon: BarChart3, tone: "emerald" },
+    { label: "Retail value", value: money(retailValue), hint: "Potential sales value", Icon: Tag, tone: "sky" },
+    { label: "Attention", value: `${lowStock + outOfStock}`, hint: `${lowStock} low · ${outOfStock} out`, Icon: SlidersHorizontal, tone: "amber" },
+  ];
+
   function show(message: string) {
     setNotice(message);
     window.setTimeout(() => setNotice(""), 3200);
@@ -154,8 +148,7 @@ export default function ProductDashboard() {
   }
 
   async function addProduct() {
-    const draft = makeProduct();
-    await saveProduct(draft);
+    await saveProduct(makeProduct());
   }
 
   async function deleteSelected() {
@@ -221,6 +214,8 @@ export default function ProductDashboard() {
     });
   }
 
+  const toggleSelection = (id: string) => setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
+
   return (
     <div className="min-h-full bg-[#f8fafc] pb-10 text-slate-900">
       <div className="mx-auto max-w-[1800px] space-y-6 p-4 sm:p-6 lg:p-8">
@@ -238,14 +233,9 @@ export default function ProductDashboard() {
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            ["Products", products.length.toLocaleString(), "Master catalog", Boxes, "indigo"],
-            ["Stock cost", money(stockValue), "Current inventory cost", BarChart3, "emerald"],
-            ["Retail value", money(retailValue), "Potential sales value", Tag, "sky"],
-            ["Attention", `${lowStock + outOfStock}`, `${lowStock} low · ${outOfStock} out`, SlidersHorizontal, "amber"],
-          ].map(([label, value, hint, Icon, tone]) => (
-            <motion.div key={String(label)} whileHover={{ y: -3 }} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-2xl ${toneClasses[String(tone)]}`}><Icon size={19} /></div>
+          {stats.map(({ label, value, hint, Icon, tone }) => (
+            <motion.div key={label} whileHover={{ y: -3 }} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-2xl ${toneClasses[tone]}`}><Icon size={19} /></div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{label}</p>
               <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
               <p className="mt-1 text-xs text-slate-500">{hint}</p>
@@ -289,9 +279,9 @@ export default function ProductDashboard() {
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 8 }, (_, index) => <div key={index} className="h-64 animate-pulse rounded-3xl bg-white shadow-sm" />)}</div>
         ) : view === "grid" ? (
-          <ProductGrid products={filtered} selectedIds={selectedIds} onToggleSelect={(id) => setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])} onOpen={(product) => { setSelectedId(product.id); click(); }} />
+          <ProductGrid products={filtered} selectedIds={selectedIds} onToggleSelect={toggleSelection} onOpen={(product) => { setSelectedId(product.id); click(); }} />
         ) : (
-          <ProductTable products={filtered} selectedIds={selectedIds} onToggleSelect={(id) => setSelectedIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])} onToggleAll={(checked) => setSelectedIds(checked ? filtered.map((item) => item.id) : [])} onOpen={(product) => { setSelectedId(product.id); click(); }} />
+          <ProductTable products={filtered} selectedIds={selectedIds} onToggleSelect={toggleSelection} onToggleAll={(checked) => setSelectedIds(checked ? filtered.map((item) => item.id) : [])} onOpen={(product) => { setSelectedId(product.id); click(); }} />
         )}
 
         <p className="px-1 text-xs font-medium text-slate-400">Showing {filtered.length.toLocaleString()} of {products.length.toLocaleString()} products · Inventory values update from the shared inventory service.</p>
