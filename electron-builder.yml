@@ -1,0 +1,23 @@
+appId: com.ablect.businesssuite
+autoUpdater: false
+productName: Ablect Business Suite
+artifactName: Ablect-Business-Suite-${version}-${arch}.${ext}
+files:
+  - dist/**
+  - electron/**
+  - package.json
+asar: true
+win:
+  target:
+    - nsis
+  artifactName: Ablect-Business-Suite-${version}-Setup.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Ablect Business Suite
+  runAfterFinish: true
+extraResources:
+  - from: electron/installer/client-config.template.json
+    to: client-config.template.json
