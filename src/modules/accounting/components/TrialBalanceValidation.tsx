@@ -1,4 +1,4 @@
-import { useTrialBalanceValidation } from "../hooks/useTrialbalanceValidation";
+import { useTrialBalanceValidation } from "../hooks/useTrialBalanceValidation";
 
 export default function TrialBalanceValidation() {
   const { balanced, difference } = useTrialBalanceValidation();
