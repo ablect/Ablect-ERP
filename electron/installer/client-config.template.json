@@ -1,0 +1,13 @@
+{
+  "CLIENT_BUSINESS_NAME": "Your Business Name",
+  "CLIENT_LOGO_PATH": "client-assets/logo.png",
+  "INSTALLATION_DATE": "",
+  "DATABASE": {
+    "HOST": "127.0.0.1",
+    "PORT": 3306,
+    "NAME": "ablect_business_suite",
+    "USER": "ablect_app",
+    "PASSWORD": "",
+    "CONNECTION_LIMIT": 20
+  }
+}
