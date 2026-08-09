@@ -86,18 +86,7 @@ function createWindow() {
   const { width: workWidth, height: workHeight } = display.workAreaSize;
   const width = Math.max(960, Math.min(1440, Math.floor(workWidth * 0.92)));
   const height = Math.max(640, Math.min(900, Math.floor(workHeight * 0.9)));
-  const win = new BrowserWindow({
-    width,
-    height,
-    minWidth: 900,
-    minHeight: 620,
-    resizable: true,
-    maximizable: true,
-    autoHideMenuBar: true,
-    backgroundColor: "#f5f7fb",
-    webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs") },
-  });
-  win.setAspectRatio(16 / 10);
+  const win = new BrowserWindow({ width, height, minWidth: 900, minHeight: 620, resizable: true, maximizable: true, autoHideMenuBar: true, backgroundColor: "#f5f7fb", webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs") } });
   win.loadURL("http://localhost:5173");
 }
 
@@ -123,13 +112,5 @@ async function initializeLocalRuntime() {
   }
 }
 
-app.whenReady().then(async () => {
-  await initializeLocalRuntime();
-  registerIpcHandlers();
-  createWindow();
-}).catch((error) => console.error("Electron startup failed:", error instanceof Error ? error.stack ?? error.message : error));
-
-app.on("window-all-closed", () => {
-  if (databasePool) databasePool.end().catch(() => undefined);
-  if (process.platform !== "darwin") app.quit();
-});
+app.whenReady().then(async () => { await initializeLocalRuntime(); registerIpcHandlers(); createWindow(); }).catch((error) => console.error("Electron startup failed:", error instanceof Error ? error.stack ?? error.message : error));
+app.on("window-all-closed", () => { if (databasePool) databasePool.end().catch(() => undefined); if (process.platform !== "darwin") app.quit(); });
