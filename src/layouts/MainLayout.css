@@ -1,5 +1,5 @@
 :root {
-  --sidebar-width: 268px;
+  --sidebar-width: clamp(220px, 18vw, 268px);
   --sidebar-collapsed-width: 82px;
   --topbar-height: 78px;
   --shell-bg: #f5f7fb;
@@ -7,44 +7,44 @@
 }
 
 .layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--shell-bg);
+  overflow: hidden;
 }
 
 .layout-body {
-  min-height: 100vh;
+  min-height: 100dvh;
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
   transition: margin-left 220ms ease;
+  min-width: 0;
 }
 
-.layout-collapsed .layout-body {
-  margin-left: var(--sidebar-collapsed-width);
-}
+.layout-collapsed .layout-body { margin-left: var(--sidebar-collapsed-width); }
 
 .layout-content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: auto;
-  padding: 28px;
+  overscroll-behavior: contain;
+  padding: clamp(14px, 2vw, 28px);
   scroll-behavior: smooth;
 }
 
-.layout-backdrop {
-  display: none;
+.layout-content > * { min-width: 0; }
+.layout-backdrop { display: none; }
+
+@media (max-width: 1279px) {
+  :root { --sidebar-width: 240px; }
 }
 
 @media (max-width: 1023px) {
   .layout-body,
-  .layout-collapsed .layout-body {
-    margin-left: 0;
-  }
-
-  .layout-content {
-    padding: 20px;
-  }
-
+  .layout-collapsed .layout-body { margin-left: 0; }
+  .layout { overflow: visible; }
+  .layout-content { padding: 16px; }
   .layout-backdrop {
     display: block;
     position: fixed;
@@ -57,7 +57,5 @@
 }
 
 @media (max-width: 640px) {
-  .layout-content {
-    padding: 14px;
-  }
+  .layout-content { padding: 10px; }
 }
