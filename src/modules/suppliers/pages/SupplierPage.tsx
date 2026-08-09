@@ -1,77 +1,46 @@
-import PageContainer
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Building2, ChevronRight, Mail, MapPin, Phone, Plus, Search, Truck, X } from "lucide-react";
+import PageContainer from "../../../components/ui/PageContainer";
+import type { Supplier } from "../types/Supplier";
+import { useSupplyChainStore } from "../../supplyChain/store/useSupplyChainStore";
 
-from "../../../components/ui/PageContainer";
+export default function SupplierPage() {
+  const hydrate = useSupplyChainStore((state) => state.hydrate);
+  const suppliers = useSupplyChainStore((state) => state.suppliers);
+  const purchases = useSupplyChainStore((state) => state.purchases);
+  const addSupplier = useSupplyChainStore((state) => state.addSupplier);
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [name, setName] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
 
-import SupplierHeader
+  useEffect(() => { void hydrate(); }, [hydrate]);
+  const filtered = useMemo(() => suppliers.filter((s) => !query.trim() || `${s.name} ${s.contactPerson} ${s.phone} ${s.email}`.toLowerCase().includes(query.toLowerCase())), [query, suppliers]);
+  const selected = suppliers.find((s) => s.id === selectedId) ?? null;
+  const selectedOrders = selected ? purchases.filter((p) => p.supplierId === selected.id) : [];
 
-from "../components/SupplierHeader";
+  async function create() {
+    if (!name.trim() || !contactPerson.trim()) return;
+    const supplier: Supplier = { id: crypto.randomUUID(), name: name.trim(), contactPerson: contactPerson.trim(), phone, email, address, active: true, createdAt: new Date().toISOString() };
+    await addSupplier(supplier);
+    setShowCreate(false); setName(""); setContactPerson(""); setPhone(""); setEmail(""); setAddress("");
+  }
 
-import SupplierStatistics
+  return <PageContainer><div className="min-h-full space-y-6 bg-[#f8fafc] pb-10 text-slate-900">
+    <header className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between"><div><div className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500">Vendor Network</div><h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Suppliers</h1><p className="mt-2 text-sm text-slate-500">A connected supplier directory with purchasing history and contact actions.</p></div><button onClick={() => setShowCreate(true)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-700"><Plus size={18}/> Add supplier</button></header>
+    <section className="grid gap-4 sm:grid-cols-3"><Card label="Suppliers" value={suppliers.length} icon={Building2}/><Card label="Active vendors" value={suppliers.filter((s) => s.active).length} icon={Truck}/><Card label="Open relationships" value={purchases.filter((p) => p.status !== "Received" && p.status !== "Cancelled").length} icon={ChevronRight}/></section>
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><div className="relative max-w-2xl"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search supplier, contact, phone or email..." className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-50"/></div></section>
+    <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{filtered.map((supplier) => <motion.article key={supplier.id} layout whileHover={{ y: -4 }} onClick={() => setSelectedId(supplier.id)} className="cursor-pointer rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-xl hover:shadow-emerald-100"><div className="flex items-start justify-between"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Building2 size={22}/></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${supplier.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{supplier.active ? "Active" : "Inactive"}</span></div><h2 className="mt-5 text-xl font-black text-slate-950">{supplier.name}</h2><p className="mt-1 text-sm font-semibold text-slate-500">{supplier.contactPerson}</p><div className="mt-5 space-y-2 text-sm text-slate-600"><p className="flex items-center gap-2"><Phone size={15} className="text-emerald-500"/>{supplier.phone || "No phone"}</p><p className="flex items-center gap-2 break-all"><Mail size={15} className="text-sky-500"/>{supplier.email || "No email"}</p><p className="flex items-center gap-2"><MapPin size={15} className="text-amber-500"/>{supplier.address || "No address"}</p></div><div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xs font-bold text-slate-400">{purchases.filter((p) => p.supplierId === supplier.id).length} purchase order(s)</span><ChevronRight size={18} className="text-slate-300"/></div></motion.article>)}</section>
 
-from "../components/SupplierStatistics";
+    <AnimatePresence>{selected && <motion.div className="fixed inset-0 z-[75] flex justify-end bg-slate-950/25 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedId(null)}><motion.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 280, damping: 30 }} onClick={(e) => e.stopPropagation()} className="h-full w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-black uppercase tracking-wider text-emerald-500">Supplier 360</p><h2 className="mt-2 text-2xl font-black">{selected.name}</h2><p className="mt-1 text-sm text-slate-500">{selected.contactPerson}</p></div><button onClick={() => setSelectedId(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X/></button></div><div className="mt-6 grid gap-3 sm:grid-cols-3"><a href={`tel:${selected.phone}`} className="rounded-2xl bg-emerald-50 p-4 text-center text-sm font-black text-emerald-700 hover:bg-emerald-100"><Phone className="mx-auto mb-2" size={18}/>Call</a><a href={`mailto:${selected.email}`} className="rounded-2xl bg-sky-50 p-4 text-center text-sm font-black text-sky-700 hover:bg-sky-100"><Mail className="mx-auto mb-2" size={18}/>Email</a><div className="rounded-2xl bg-amber-50 p-4 text-center text-sm font-black text-amber-700"><Truck className="mx-auto mb-2" size={18}/>{selectedOrders.length} POs</div></div><div className="mt-6 rounded-3xl bg-slate-50 p-5"><p className="text-xs font-black uppercase tracking-wider text-slate-400">Contact & address</p><div className="mt-4 space-y-3 text-sm"><p className="flex gap-3"><Phone size={17} className="text-emerald-500"/>{selected.phone || "No phone"}</p><p className="flex gap-3"><Mail size={17} className="text-sky-500"/>{selected.email || "No email"}</p><p className="flex gap-3"><MapPin size={17} className="text-amber-500"/>{selected.address || "No address"}</p></div></div><div className="mt-6"><div className="flex items-center justify-between"><h3 className="text-lg font-black">Purchase history</h3><span className="text-xs font-bold text-slate-400">Linked to Purchases</span></div><div className="mt-3 space-y-3">{selectedOrders.length ? selectedOrders.map((po) => <div key={po.id} className="rounded-2xl border border-slate-100 p-4"><div className="flex items-center justify-between"><span className="font-black">{po.number}</span><span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-black text-sky-700">{po.status}</span></div><p className="mt-1 text-xs text-slate-400">{new Date(po.orderDate).toLocaleDateString()} · ₦{po.totalAmount.toLocaleString()}</p></div>) : <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">No purchase orders linked yet.</p>}</div></div></motion.aside></motion.div>}</AnimatePresence>
 
-import CreateSupplierButton
-
-from "../components/CreateSupplierButton";
-
-import SupplierForm
-
-from "../components/SupplierForm";
-
-import SupplierSearch
-
-from "../components/SupplierSearch";
-
-import SupplierTable
-
-from "../components/SupplierTable";
-
-import SupplierCount
-
-from "../components/SupplierCount";
-
-import {
-
-useLoadSuppliers
-
+    <AnimatePresence>{showCreate && <motion.div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 className="text-2xl font-black">Add supplier</h2><button onClick={() => setShowCreate(false)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X/></button></div><div className="mt-6 grid gap-4 sm:grid-cols-2"><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Business name" className="rounded-xl border border-slate-200 p-3"/><input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Contact person" className="rounded-xl border border-slate-200 p-3"/><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className="rounded-xl border border-slate-200 p-3"/><input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="rounded-xl border border-slate-200 p-3"/><input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" className="rounded-xl border border-slate-200 p-3 sm:col-span-2"/></div><div className="mt-6 flex justify-end gap-3"><button onClick={() => setShowCreate(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold">Cancel</button><button onClick={() => void create()} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black text-white">Save supplier</button></div></motion.div></motion.div>}</AnimatePresence>
+  </div></PageContainer>;
 }
 
-from "../hooks/useLoadSuppliers";
-
-export default function SupplierPage(){
-
-useLoadSuppliers();
-
-return(
-
-<PageContainer>
-
-<div className="space-y-8">
-
-<SupplierHeader
-
-title="Suppliers"
-
-description="Manage supplier records."
-
-/>
-
-<SupplierStatistics/>
-
-<CreateSupplierButton/>
-
-<SupplierForm/>
-
-<SupplierSearch/>
-
-<SupplierTable/>
-
-<SupplierCount/>
-
-</div>
-
-</PageContainer>
-
-);
-
-}
+function Card({ icon: Icon, label, value }: { icon: typeof Building2; label: string; value: number }) { return <motion.div whileHover={{ y: -3 }} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Icon size={19}/></div><p className="mt-4 text-xs font-black uppercase tracking-wider text-slate-400">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value.toLocaleString()}</p></motion.div>; }
