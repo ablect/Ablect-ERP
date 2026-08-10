@@ -1,66 +1,9 @@
-function stockStatus(quantity, minimumStock) {
-  if (Number(quantity) <= 0) return "Out of Stock";
-  if (Number(quantity) <= Number(minimumStock)) return "Low Stock";
-  return "In Stock";
-}
-
-function mapProduct(row) {
-  return {
-    id: String(row.id),
-    sku: row.sku ?? "",
-    barcode: row.barcode ?? "",
-    itemName: row.name ?? "",
-    category: row.category ?? "General",
-    warehouse: row.warehouse ?? "",
-    unit: row.unit ?? "PCS",
-    quantity: Number(row.quantity ?? 0),
-    reorderLevel: Number(row.minimum_stock ?? 0),
-    unitCost: Number(row.cost_price ?? 0),
-    sellingPrice: Number(row.selling_price ?? 0),
-    status: stockStatus(row.quantity, row.minimum_stock),
-    brand: row.brand ?? "",
-    description: row.description ?? "",
-    imageUrl: row.image_url ?? "",
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-export function createPosRepository(pool) {
-  return {
-    async listProducts(search = "") {
-      const term = `%${String(search).trim()}%`;
-      const [rows] = await pool.query(
-        `SELECT id,barcode,sku,name,category,unit,cost_price,selling_price,quantity,minimum_stock,image_url,created_at,updated_at
-           FROM products
-          WHERE ?='%%' OR name LIKE ? OR barcode LIKE ? OR sku LIKE ? OR category LIKE ? OR brand LIKE ?
-          ORDER BY name ASC LIMIT 2000`,
-        [term, term, term, term, term, term],
-      );
-      return rows.map(mapProduct);
-    },
-    async createProduct(payload) {
-      await pool.query(
-        `INSERT INTO products (barcode,sku,name,category,unit,cost_price,selling_price,quantity,minimum_stock,image_url)
-         VALUES (?,?,?,?,?,?,?,?,?,?)`,
-        [payload.barcode || null, payload.sku || null, payload.itemName, payload.category || "General", payload.unit || "PCS", Number(payload.unitCost || 0), Number(payload.sellingPrice || 0), Number(payload.quantity || 0), Number(payload.reorderLevel || 0), payload.imageUrl || null],
-      );
-      return this.listProducts();
-    },
-    async updateProduct(payload) {
-      await pool.query(
-        `UPDATE products SET barcode=?,sku=?,name=?,category=?,unit=?,cost_price=?,selling_price=?,quantity=?,minimum_stock=?,image_url=? WHERE id=?`,
-        [payload.barcode || null, payload.sku || null, payload.itemName, payload.category || "General", payload.unit || "PCS", Number(payload.unitCost || 0), Number(payload.sellingPrice || 0), Number(payload.quantity || 0), Number(payload.reorderLevel || 0), payload.imageUrl || null, payload.id],
-      );
-      return this.listProducts();
-    },
-    async deleteProduct(id) {
-      await pool.query(`DELETE FROM products WHERE id=?`, [id]);
-      return this.listProducts();
-    },
-    async listUnitTypes() {
-      const [rows] = await pool.query(`SELECT id,code,name,allows_decimal,is_active FROM unit_types WHERE is_active=TRUE ORDER BY name ASC`);
-      return rows.map((row) => ({ id: String(row.id), code: row.code, name: row.name, allowsDecimal: Boolean(row.allows_decimal), isActive: Boolean(row.is_active) }));
-    },
-  };
-}
+function stockStatus(quantity, minimumStock) { if (Number(quantity)<=0) return "Out of Stock"; if (Number(quantity)<=Number(minimumStock)) return "Low Stock"; return "In Stock"; }
+function mapProduct(row){return{id:String(row.id),sku:row.sku??"",barcode:row.barcode??"",itemName:row.name??"",category:row.category??"General",warehouse:row.warehouse??"",unit:row.unit??"PCS",quantity:Number(row.quantity??0),reorderLevel:Number(row.minimum_stock??0),unitCost:Number(row.cost_price??0),sellingPrice:Number(row.selling_price??0),status:stockStatus(row.quantity,row.minimum_stock),brand:row.brand??"",description:row.description??"",imageUrl:row.image_url??"",createdAt:row.created_at,updatedAt:row.updated_at};}
+export function createPosRepository(pool){return{
+ async listProducts(search=""){const term=`%${String(search).trim()}%`;const[rows]=await pool.query(`SELECT id,barcode,sku,name,category,unit,cost_price,selling_price,quantity,minimum_stock,image_url,brand,description,created_at,updated_at FROM products WHERE ?='%%' OR name LIKE ? OR barcode LIKE ? OR sku LIKE ? OR category LIKE ? OR brand LIKE ? ORDER BY name ASC LIMIT 2000`,[term,term,term,term,term,term]);return rows.map(mapProduct)},
+ async createProduct(payload){await pool.query(`INSERT INTO products (barcode,sku,name,category,unit,cost_price,selling_price,quantity,minimum_stock,image_url,brand,description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,[payload.barcode||null,payload.sku||null,payload.itemName,payload.category||"General",payload.unit||"PCS",Number(payload.unitCost||0),Number(payload.sellingPrice||0),Number(payload.quantity||0),Number(payload.reorderLevel||0),payload.imageUrl||null,payload.brand||null,payload.description||null]);return this.listProducts()},
+ async updateProduct(payload){await pool.query(`UPDATE products SET barcode=?,sku=?,name=?,category=?,unit=?,cost_price=?,selling_price=?,quantity=?,minimum_stock=?,image_url=?,brand=?,description=? WHERE id=?`,[payload.barcode||null,payload.sku||null,payload.itemName,payload.category||"General",payload.unit||"PCS",Number(payload.unitCost||0),Number(payload.sellingPrice||0),Number(payload.quantity||0),Number(payload.reorderLevel||0),payload.imageUrl||null,payload.brand||null,payload.description||null,payload.id]);return this.listProducts()},
+ async deleteProduct(id){await pool.query(`DELETE FROM products WHERE id=?`,[id]);return this.listProducts()},
+ async listUnitTypes(){const[rows]=await pool.query(`SELECT id,code,name,allows_decimal,is_active FROM unit_types WHERE is_active=TRUE ORDER BY name ASC`);return rows.map(row=>({id:String(row.id),code:row.code,name:row.name,allowsDecimal:Boolean(row.allows_decimal),isActive:Boolean(row.is_active)}))},
+}};
