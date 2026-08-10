@@ -1,3 +1,12 @@
+export interface ProductUnitVariant {
+  id?: string;
+  code: string;
+  name: string;
+  conversionToBase: number;
+  sellingPrice: number;
+  isDefault?: boolean;
+}
+
 export interface InventoryItem {
   id: string;
   sku: string;
@@ -14,4 +23,9 @@ export interface InventoryItem {
   brand?: string;
   description?: string;
   imageUrl?: string;
+  isTracked?: boolean;
+  baseUnitCode?: string;
+  unitVariants?: ProductUnitVariant[];
+  createdAt?: string;
+  updatedAt?: string;
 }
