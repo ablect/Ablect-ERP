@@ -1,12 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { app, BrowserWindow, ipcMain, screen } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, screen } from "electron";
 import { createDatabasePool, testDatabaseConnection } from "./database/db.js";
 import { runMigrations } from "./database/migrate.js";
 import { createErpRepository } from "./database/erp-repository.js";
 import { createAuthRepository } from "./database/auth-repository.js";
 import { createProcurementRepository } from "./database/procurement-repository.js";
 import { createPayrollRepository } from "./database/payroll-repository.js";
+import { createSettingsRepository } from "./database/settings-repository.js";
 import { loadClientConfig, resolveClientLogoPath } from "./config/client-config.js";
 
 let clientConfig;
@@ -15,6 +16,8 @@ let erpRepository;
 let authRepository;
 let procurementRepository;
 let payrollRepository;
+let settingsRepository;
+let mainWindow;
 let databaseStatus = { connected: false, error: null };
 
 async function buildClientConfigPayload() {
@@ -33,12 +36,77 @@ async function buildClientConfigPayload() {
 }
 
 async function syncInstallationSettings() {
-  await databasePool.query(`INSERT INTO client_settings (id,business_name,logo_path,installation_date) VALUES (1,?,?,?) ON DUPLICATE KEY UPDATE business_name=VALUES(business_name),logo_path=VALUES(logo_path),installation_date=VALUES(installation_date)`, [clientConfig.CLIENT_BUSINESS_NAME, clientConfig.CLIENT_LOGO_PATH || null, clientConfig.INSTALLATION_DATE || new Date().toISOString().slice(0, 10)]);
+  await databasePool.query(
+    `INSERT INTO client_settings (id,business_name,logo_path,installation_date) VALUES (1,?,?,?) ON DUPLICATE KEY UPDATE business_name=VALUES(business_name),logo_path=VALUES(logo_path),installation_date=VALUES(installation_date)`,
+    [clientConfig.CLIENT_BUSINESS_NAME, clientConfig.CLIENT_LOGO_PATH || null, clientConfig.INSTALLATION_DATE || new Date().toISOString().slice(0, 10)],
+  );
 }
 
 function requireDatabase(repository) {
   if (!databaseStatus.connected || !repository) throw new Error(`Database is unavailable${databaseStatus.error ? `: ${databaseStatus.error}` : "."}`);
   return repository;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[character]));
+}
+
+function money(value) {
+  return `₦${Number(value || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function receiptHtml(payload) {
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  const rows = items.map((item) => `<tr><td>${escapeHtml(item.name)}</td><td class="qty">${escapeHtml(item.quantity)} ${escapeHtml(item.unit || "PCS")}</td><td class="price">${money(item.unitPrice)}</td><td class="price">${money(Number(item.quantity) * Number(item.unitPrice))}</td></tr>`).join("");
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+  @page{margin:0}body{font-family:Arial,sans-serif;width:${payload?.receiptWidth === "58mm" ? "58mm" : "80mm"};margin:0;padding:5mm;color:#111;font-size:11px}h1{font-size:17px;text-align:center;margin:0 0 3px}p{margin:2px 0}.muted{color:#666;font-size:9px}.line{border-top:1px dashed #777;margin:7px 0}table{width:100%;border-collapse:collapse}td{padding:3px 0;vertical-align:top}.qty{width:24%;text-align:center}.price{width:22%;text-align:right}.total{font-size:15px;font-weight:800}.center{text-align:center}.footer{margin-top:10px;text-align:center;font-size:9px;white-space:pre-wrap}
+  </style></head><body><h1>${escapeHtml(payload?.businessName || "Ablect Business Suite")}</h1><p class="center muted">${escapeHtml(payload?.invoiceNumber || "Receipt")}</p><p class="center muted">${escapeHtml(payload?.date || new Date().toLocaleString("en-NG"))}</p><div class="line"></div><p><b>Customer:</b> ${escapeHtml(payload?.customerName || "Walk-in")}</p><div class="line"></div><table><tbody>${rows}</tbody></table><div class="line"></div><p><b>Subtotal</b><span style="float:right">${money(payload?.subtotal)}</span></p><p><b>Discount</b><span style="float:right">-${money(payload?.discount)}</span></p><p><b>Tax</b><span style="float:right">${money(payload?.tax)}</span></p><p class="total">TOTAL <span style="float:right">${money(payload?.total)}</span></p><p>Paid <span style="float:right">${money(payload?.paid)}</span></p><p>Change <span style="float:right">${money(payload?.change)}</span></p><div class="line"></div><p><b>Payment:</b> ${escapeHtml(payload?.paymentMethod || "Cash")}</p><p class="footer">${escapeHtml(payload?.footer || "Thank you for your patronage.")}</p></body></html>`;
+}
+
+async function createReceiptWindow(html) {
+  const receiptWindow = new BrowserWindow({ show: false, width: 500, height: 900, webPreferences: { sandbox: true } });
+  await receiptWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  return receiptWindow;
+}
+
+async function listPrinters() {
+  if (!mainWindow || mainWindow.isDestroyed()) return [];
+  const printers = await mainWindow.webContents.getPrintersAsync();
+  return printers.map((printer) => ({ name: printer.name, displayName: printer.displayName, description: printer.description, status: printer.status, isDefault: printer.isDefault }));
+}
+
+async function printReceipt(payload) {
+  const html = receiptHtml(payload);
+  const receiptWindow = await createReceiptWindow(html);
+  const printerName = String(payload?.printerName || "").trim();
+  return new Promise((resolve, reject) => {
+    receiptWindow.webContents.print({
+      silent: Boolean(printerName),
+      deviceName: printerName || undefined,
+      printBackground: true,
+      margins: { marginType: "none" },
+      copies: 1,
+    }, (success, failureReason) => {
+      receiptWindow.destroy();
+      if (success) resolve({ printed: true, printerName: printerName || "system dialog" });
+      else reject(new Error(failureReason || "Receipt printing was cancelled or failed."));
+    });
+  });
+}
+
+async function exportReceiptPdf(payload) {
+  const html = receiptHtml(payload);
+  const receiptWindow = await createReceiptWindow(html);
+  try {
+    const pdf = await receiptWindow.webContents.printToPDF({ printBackground: true, pageSize: { width: payload?.receiptWidth === "58mm" ? 58000 : 80000, height: 220000 } });
+    const defaultName = `${payload?.invoiceNumber || "receipt"}.pdf`;
+    const result = await dialog.showSaveDialog(mainWindow, { title: "Save receipt PDF", defaultPath: path.join(app.getPath("documents"), defaultName), filters: [{ name: "PDF", extensions: ["pdf"] }] });
+    if (result.canceled || !result.filePath) return { saved: false };
+    await fs.writeFile(result.filePath, pdf);
+    return { saved: true, filePath: result.filePath };
+  } finally {
+    receiptWindow.destroy();
+  }
 }
 
 function registerIpcHandlers() {
@@ -51,6 +119,7 @@ function registerIpcHandlers() {
   ipcMain.handle("erp:products:create", (_event, payload) => requireDatabase(erpRepository).createProduct(payload));
   ipcMain.handle("erp:products:update", (_event, payload) => requireDatabase(erpRepository).updateProduct(payload));
   ipcMain.handle("erp:products:delete", (_event, id) => requireDatabase(erpRepository).deleteProduct(id));
+  ipcMain.handle("erp:units:list", () => requireDatabase(erpRepository).listUnitTypes());
   ipcMain.handle("erp:customers:list", (_event, search = "") => requireDatabase(erpRepository).listCustomers(search));
   ipcMain.handle("erp:customers:create", (_event, payload) => requireDatabase(erpRepository).createCustomer(payload));
   ipcMain.handle("erp:customers:update", (_event, payload) => requireDatabase(erpRepository).updateCustomer(payload));
@@ -73,12 +142,18 @@ function registerIpcHandlers() {
   ipcMain.handle("erp:crm:activities", () => requireDatabase(erpRepository).listActivities());
   ipcMain.handle("erp:hr:employees", () => requireDatabase(erpRepository).listEmployees());
   ipcMain.handle("erp:hr:attendance", () => requireDatabase(erpRepository).listAttendance());
-  ipcMain.handle("erp:payroll:runs", () => requireDatabase(erpRepository).listPayrollRuns());
+  ipcMain.handle("erp:payroll:runs", () => requireDatabase(payrollRepository).listPayrollRuns());
   ipcMain.handle("erp:payroll:calculate", (_event, payload) => requireDatabase(payrollRepository).calculateRun(payload));
   ipcMain.handle("erp:admin:users", () => requireDatabase(erpRepository).listUsers());
   ipcMain.handle("erp:admin:roles", () => requireDatabase(erpRepository).listRoles());
   ipcMain.handle("erp:admin:audit-logs", () => requireDatabase(erpRepository).listAuditLogs());
   ipcMain.handle("erp:reports:summary", (_event, from, to) => requireDatabase(erpRepository).getReportSummary(from, to));
+  ipcMain.handle("settings:all", () => requireDatabase(settingsRepository).getAll());
+  ipcMain.handle("settings:get", (_event, key) => requireDatabase(settingsRepository).get(key));
+  ipcMain.handle("settings:save", (_event, key, value, userId) => requireDatabase(settingsRepository).save(key, value, userId));
+  ipcMain.handle("hardware:printers:list", () => listPrinters());
+  ipcMain.handle("hardware:receipt:print", (_event, payload) => printReceipt(payload));
+  ipcMain.handle("hardware:receipt:pdf", (_event, payload) => exportReceiptPdf(payload));
 }
 
 function createWindow() {
@@ -86,8 +161,9 @@ function createWindow() {
   const { width: workWidth, height: workHeight } = display.workAreaSize;
   const width = Math.max(960, Math.min(1440, Math.floor(workWidth * 0.92)));
   const height = Math.max(640, Math.min(900, Math.floor(workHeight * 0.9)));
-  const win = new BrowserWindow({ width, height, minWidth: 900, minHeight: 620, resizable: true, maximizable: true, autoHideMenuBar: true, backgroundColor: "#f5f7fb", webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs") } });
-  win.loadURL("http://localhost:5173");
+  mainWindow = new BrowserWindow({ width, height, minWidth: 900, minHeight: 620, resizable: true, maximizable: true, autoHideMenuBar: true, backgroundColor: "#f5f7fb", webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs") } });
+  mainWindow.loadURL("http://localhost:5173");
+  mainWindow.on("closed", () => { mainWindow = null; });
 }
 
 async function initializeLocalRuntime() {
@@ -98,6 +174,7 @@ async function initializeLocalRuntime() {
     authRepository = createAuthRepository(databasePool);
     procurementRepository = createProcurementRepository(databasePool);
     payrollRepository = createPayrollRepository(databasePool);
+    settingsRepository = createSettingsRepository(databasePool);
     await testDatabaseConnection(databasePool);
     await runMigrations(databasePool, app.getAppPath());
     await syncInstallationSettings();
