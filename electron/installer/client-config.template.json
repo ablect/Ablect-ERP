@@ -8,6 +8,8 @@
     "NAME": "ablect_business_suite",
     "USER": "ablect_app",
     "PASSWORD": "",
+    "ADMIN_USER": "root",
+    "ADMIN_PASSWORD": "",
     "CONNECTION_LIMIT": 20
   }
 }
