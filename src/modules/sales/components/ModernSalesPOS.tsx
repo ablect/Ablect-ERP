@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, Barcode, Banknote, Check, FileDown, Grid2X2, History, List, Minus, Plus, Printer, Receipt, Search, Sparkles, Trash2, UserRound, WalletCards, Wifi, X } from "lucide-react";
+import { Archive, Banknote, Check, FileDown, Grid2X2, History, List, Minus, Plus, Printer, Receipt, Search, Sparkles, Trash2, UserRound, WalletCards, Wifi, X } from "lucide-react";
 import { useAuth } from "../../../auth/AuthContext";
 import { requireDesktopApi, type PrinterInfo } from "../../../lib/desktopApi";
 import { useBarcodeScanner } from "../hooks/useBarcodeScanner";
