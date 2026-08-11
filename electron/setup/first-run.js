@@ -44,11 +44,14 @@ export async function completeFirstRun(pool, userDataPath, payload) {
   } catch (error) {
     await connection.rollback();
     throw error;
-  } finally {
-    connection.release();
-  }
+  } finally { connection.release(); }
 
   await fs.mkdir(userDataPath, { recursive: true });
   await fs.writeFile(path.join(userDataPath, "hardware-config.json"), JSON.stringify(hardware, null, 2), "utf8");
+
+  const configPath = path.join(userDataPath, "client-config.json");
+  let existing = {};
+  try { existing = JSON.parse(await fs.readFile(configPath, "utf8")); } catch {}
+  await fs.writeFile(configPath, JSON.stringify({ ...existing, CLIENT_BUSINESS_NAME: businessName, INSTALLATION_DATE: new Date().toISOString().slice(0, 10) }, null, 2), "utf8");
   return { completed: true };
 }
