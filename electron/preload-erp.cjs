@@ -7,12 +7,21 @@ contextBridge.exposeInMainWorld("ablectDesktop", {
     login: (identifier, password) => ipcRenderer.invoke("auth:login", identifier, password),
     validate: (token) => ipcRenderer.invoke("auth:validate", token),
     logout: (token) => ipcRenderer.invoke("auth:logout", token),
+    changePassword: (token, currentPassword, newPassword) => ipcRenderer.invoke("auth:change-password", token, currentPassword, newPassword),
+    supportReset: (token, newPassword) => ipcRenderer.invoke("auth:support-reset", token, newPassword),
+  },
+  license: {
+    status: () => ipcRenderer.invoke("license:status"),
+  },
+  setup: {
+    status: () => ipcRenderer.invoke("setup:status"),
+    complete: (payload) => ipcRenderer.invoke("setup:complete", payload),
   },
   erp: {
     products: { list: (search = "") => ipcRenderer.invoke("erp:products:list", search), create: (payload) => ipcRenderer.invoke("erp:products:create", payload), update: (payload) => ipcRenderer.invoke("erp:products:update", payload), delete: (id) => ipcRenderer.invoke("erp:products:delete", id) },
     units: { list: () => ipcRenderer.invoke("erp:units:list") },
     customers: { list: (search = "") => ipcRenderer.invoke("erp:customers:list", search), create: (payload) => ipcRenderer.invoke("erp:customers:create", payload), update: (payload) => ipcRenderer.invoke("erp:customers:update", payload), delete: (id) => ipcRenderer.invoke("erp:customers:delete", id) },
-    suppliers: { list: (search = "") => ipcRenderer.invoke("erp:suppliers:list", search), create: (payload) => ipcRenderer.invoke("erp:suppliers:create", payload) },
+    suppliers: { list: (search = "") => ipcRenderer.invoke("erp:suppliers:list"), create: (payload) => ipcRenderer.invoke("erp:suppliers:create", payload) },
     warehouses: { list: () => ipcRenderer.invoke("erp:warehouses:list"), create: (payload) => ipcRenderer.invoke("erp:warehouses:create", payload) },
     dashboard: { metrics: () => ipcRenderer.invoke("erp:dashboard:metrics") },
     sales: { list: () => ipcRenderer.invoke("erp:sales:list"), create: (payload) => ipcRenderer.invoke("erp:sales:create", payload) },
