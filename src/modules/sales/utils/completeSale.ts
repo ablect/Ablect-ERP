@@ -18,7 +18,7 @@ export async function completeSale(saleId: string) {
     userId: null,
     paymentMethod: sale.paymentMethod || null,
     paidAmount: sale.amountPaid ?? 0,
-    items: items.map((item) => ({ productId: item.productId, quantity: item.quantity, unitPrice: item.unitPrice, discount: item.discount ?? 0, tax: item.tax ?? 0 })),
+    items: items.map((item) => ({ productId: item.productId, quantity: item.quantity, unitPrice: item.unitPrice, discount: 0, tax: 0 })),
   });
 
   const posted = result as { id: string; saleNumber: string; total: number; paidAmount: number; paymentStatus: string };
