@@ -13,6 +13,8 @@ const DEFAULT_CONFIG = {
     NAME: "ablect_business_suite",
     USER: "ablect_app",
     PASSWORD: "",
+    ADMIN_USER: "root",
+    ADMIN_PASSWORD: "",
     CONNECTION_LIMIT: 10,
   },
 };
@@ -30,19 +32,6 @@ function readJsonFile(filePath) {
   }
 }
 
-/**
- * Loads installation settings without modifying application source code.
- *
- * Priority:
- * 1. ABLECT_CLIENT_CONFIG_PATH environment variable (installer/admin override)
- * 2. Electron userData/client-config.json (recommended packaged location)
- * 3. Project-root client-config.json (development fallback)
- * 4. Built-in defaults
- *
- * In development, the local setup script provisions the fixed development
- * MySQL account and password. This also lets a malformed old client-config.json
- * recover instead of blocking Electron startup.
- */
 export function loadClientConfig(userDataPath) {
   const explicitPath = process.env.ABLECT_CLIENT_CONFIG_PATH;
   const candidates = [
@@ -50,11 +39,9 @@ export function loadClientConfig(userDataPath) {
     path.join(userDataPath, "client-config.json"),
     path.join(process.cwd(), "client-config.json"),
   ].filter(Boolean);
-
   const configPath = candidates.find((candidate) => fs.existsSync(candidate));
   const fileConfig = configPath ? readJsonFile(configPath) : null;
   const isDevelopment = process.defaultApp === true;
-
   const merged = {
     ...DEFAULT_CONFIG,
     ...fileConfig,
@@ -69,6 +56,8 @@ export function loadClientConfig(userDataPath) {
       ...(process.env.ABLECT_DB_NAME ? { NAME: process.env.ABLECT_DB_NAME } : {}),
       ...(process.env.ABLECT_DB_USER ? { USER: process.env.ABLECT_DB_USER } : {}),
       ...(process.env.ABLECT_DB_PASSWORD ? { PASSWORD: process.env.ABLECT_DB_PASSWORD } : {}),
+      ...(process.env.ABLECT_DB_ADMIN_USER ? { ADMIN_USER: process.env.ABLECT_DB_ADMIN_USER } : {}),
+      ...(process.env.ABLECT_DB_ADMIN_PASSWORD ? { ADMIN_PASSWORD: process.env.ABLECT_DB_ADMIN_PASSWORD } : {}),
       ...(process.env.ABLECT_DB_CONNECTION_LIMIT
         ? { CONNECTION_LIMIT: Number(process.env.ABLECT_DB_CONNECTION_LIMIT) }
         : {}),
