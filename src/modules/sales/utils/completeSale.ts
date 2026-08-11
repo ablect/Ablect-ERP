@@ -1,78 +1,47 @@
-import { saleStockService } from "../services/SaleStockService";
+import { requireDesktopApi } from "../../../lib/desktopApi";
 import { saleService } from "../services/SaleService";
 import { saleItemService } from "../services/SaleItemService";
 import { useSalesStore } from "../store/SalesStore";
 
-export async function completeSale(
-  saleId: string,
-) {
-  const sales = await saleService.getAll();
+export async function completeSale(saleId: string) {
+  const sale = await saleService.getById(saleId);
+  if (!sale) throw new Error("Sale not found.");
+  if (sale.status === "Completed") return sale;
+  if (sale.status === "Cancelled") throw new Error("Cancelled sales cannot be completed.");
 
-  const sale = sales.find(
-    (item) => item.id === saleId,
-  );
+  const items = await saleItemService.getBySaleId(saleId);
+  if (!items.length) throw new Error("Sale cannot be completed because it has no items.");
 
-  if (!sale) {
-    throw new Error("Sale not found.");
-  }
+  const result = await requireDesktopApi().erp.sales.create({
+    customerId: sale.customerId || null,
+    warehouseId: null,
+    userId: null,
+    paymentMethod: sale.paymentMethod || null,
+    paidAmount: sale.amountPaid ?? 0,
+    items: items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      discount: item.discount ?? 0,
+      tax: item.tax ?? 0,
+    })),
+  });
 
-  if (sale.status === "Completed") {
-    return sale;
-  }
-
-  if (sale.status === "Cancelled") {
-    throw new Error(
-      "Cancelled sales cannot be completed.",
-    );
-  }
-
-  const items =
-    await saleItemService.getBySaleId(
-      saleId,
-    );
-
-  if (items.length === 0) {
-    throw new Error(
-      "Sale cannot be completed because it has no items.",
-    );
-  }
-
-  for (const item of items) {
-    if (!item.productId) {
-      throw new Error(
-        "A sale item is missing a product.",
-      );
-    }
-
-    if (item.quantity <= 0) {
-      throw new Error(
-        "Sale quantity must be greater than zero.",
-      );
-    }
-  }
-
-  for (const item of items) {
-    await saleStockService.issue(
-      item.productId,
-      saleId,
-      item.quantity,
-    );
-  }
-
-  const completedSale = {
+  const posted = result as { id: string; saleNumber: string; total: number; paidAmount: number; paymentStatus: string };
+  const completedSale: Sale = {
     ...sale,
-    status: "Completed" as const,
+    id: String(posted.id),
+    invoiceNumber: posted.saleNumber,
+    total: Number(posted.total),
+    amountPaid: Number(posted.paidAmount),
+    balanceDue: Math.max(0, Number(posted.total) - Number(posted.paidAmount)),
+    status: "Completed",
+    paymentStatus: posted.paymentStatus === "PAID" ? "Paid" : posted.paymentStatus === "PARTIAL" ? "Partially Paid" : "Unpaid",
   };
 
-  await saleService.update(
-    completedSale,
-  );
-
-  useSalesStore
-    .getState()
-    .setSales(
-      await saleService.getAll(),
-    );
-
+  saleService.consumeDraft(saleId);
+  saleItemService.deleteBySaleId(saleId);
+  const sales = await saleService.getAll();
+  useSalesStore.getState().setSales(sales);
   return completedSale;
 }
