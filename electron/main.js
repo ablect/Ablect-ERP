@@ -38,21 +38,13 @@ async function buildClientConfigPayload() {
 }
 
 async function syncInstallationSettings() {
-  await databasePool.query(
-    `INSERT INTO client_settings (id,business_name,logo_path,installation_date) VALUES (1,?,?,?)
-     ON DUPLICATE KEY UPDATE business_name=VALUES(business_name),logo_path=VALUES(logo_path),installation_date=VALUES(installation_date)`,
-    [clientConfig.CLIENT_BUSINESS_NAME, clientConfig.CLIENT_LOGO_PATH || null, clientConfig.INSTALLATION_DATE || new Date().toISOString().slice(0, 10)],
-  );
+  await databasePool.query(`INSERT INTO client_settings (id,business_name,logo_path,installation_date) VALUES (1,?,?,?) ON DUPLICATE KEY UPDATE business_name=VALUES(business_name),logo_path=VALUES(logo_path),installation_date=VALUES(installation_date)`, [clientConfig.CLIENT_BUSINESS_NAME, clientConfig.CLIENT_LOGO_PATH || null, clientConfig.INSTALLATION_DATE || new Date().toISOString().slice(0, 10)]);
 }
 
 function safeHandle(channel, handler) {
   ipcMain.handle(channel, async (event, ...args) => {
-    try {
-      return await handler(event, ...args);
-    } catch (error) {
-      logger?.error(`IPC failure: ${channel}`, { error: error instanceof Error ? error.stack : String(error) });
-      throw error;
-    }
+    try { return await handler(event, ...args); }
+    catch (error) { logger?.error(`IPC failure: ${channel}`, { error: error instanceof Error ? error.stack : String(error) }); throw error; }
   });
 }
 
@@ -97,30 +89,14 @@ function registerIpcHandlers() {
 }
 
 function createWindow() {
-  const win = new BrowserWindow({
-    width: 1400,
-    height: 850,
-    minWidth: 1200,
-    minHeight: 700,
-    autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs") },
-  });
-
+  const win = new BrowserWindow({ width: 1400, height: 850, minWidth: 1200, minHeight: 700, autoHideMenuBar: true, webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(app.getAppPath(), "electron", "preload-erp.cjs") } });
   if (app.isPackaged) win.loadFile(path.join(app.getAppPath(), "dist", "index.html"));
   else win.loadURL("http://localhost:5173");
 }
 
 async function initializeLocalRuntime() {
   clientConfig = loadClientConfig(app.getPath("userData"));
-  const dbConfig = {
-    host: clientConfig.DATABASE.HOST,
-    port: clientConfig.DATABASE.PORT,
-    user: clientConfig.DATABASE.USER,
-    password: clientConfig.DATABASE.PASSWORD,
-    database: clientConfig.DATABASE.NAME,
-    connectionLimit: clientConfig.DATABASE.CONNECTION_LIMIT,
-  };
-
+  const dbConfig = { host: clientConfig.DATABASE.HOST, port: clientConfig.DATABASE.PORT, user: clientConfig.DATABASE.USER, password: clientConfig.DATABASE.PASSWORD, database: clientConfig.DATABASE.NAME, connectionLimit: clientConfig.DATABASE.CONNECTION_LIMIT };
   try {
     await ensureDatabaseExists(dbConfig);
     databasePool = createDatabasePool(dbConfig);
@@ -141,7 +117,7 @@ async function initializeLocalRuntime() {
 }
 
 app.whenReady().then(async () => {
-  ({ error: logger } = initializeLogging());
+  logger = initializeLogging();
   await initializeLocalRuntime();
   registerIpcHandlers();
   createWindow();
