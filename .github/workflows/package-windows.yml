@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/modern-sales-pos
+      - feat/modern-sales-pos-next
 jobs:
   windows-installer:
     runs-on: windows-latest
@@ -16,7 +17,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Build Windows installer
         run: npm run package:win
       - name: Upload installer
