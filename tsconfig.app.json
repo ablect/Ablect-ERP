@@ -20,6 +20,7 @@
   },
   "include": ["src"],
   "exclude": [
+    "src/modules/auth/**/*",
     "src/modules/hr/components/**/*",
     "src/modules/hr/hooks/**/*",
     "src/modules/payroll/components/**/*",
