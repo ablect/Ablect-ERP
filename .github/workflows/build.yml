@@ -4,7 +4,9 @@ on:
     branches:
       - main
       - feat/modern-sales-pos
+      - feat/modern-sales-pos-next
   pull_request:
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
