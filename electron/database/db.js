@@ -1,13 +1,11 @@
 import mysql from "mysql2/promise";
 
 export async function ensureDatabaseExists(config) {
-  const connection = await mysql.createConnection({ host: config.host, port: config.port, user: config.user, password: config.password });
+  const connection = await mysql.createConnection({ host: config.host, port: config.port, user: config.adminUser || config.user, password: config.adminPassword ?? config.password });
   try {
     const databaseName = String(config.database).replace(/`/g, "``");
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${databaseName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-  } finally {
-    await connection.end();
-  }
+  } finally { await connection.end(); }
 }
 
 export function createDatabasePool(config) {
