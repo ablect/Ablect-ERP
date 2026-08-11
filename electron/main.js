@@ -10,6 +10,7 @@ import { createProcurementRepository } from "./database/procurement-repository.j
 import { createPayrollRepository } from "./database/payroll-repository.js";
 import { loadClientConfig, resolveClientLogoPath } from "./config/client-config.js";
 import { initializeLogging } from "./logging.js";
+import { registerSecurityIpc } from "./security/register-security.js";
 
 let clientConfig;
 let databasePool;
@@ -30,9 +31,7 @@ async function buildClientConfigPayload() {
       const extension = path.extname(logoPath).toLowerCase();
       const mime = extension === ".svg" ? "image/svg+xml" : extension === ".webp" ? "image/webp" : extension === ".jpg" || extension === ".jpeg" ? "image/jpeg" : "image/png";
       logoDataUrl = `data:${mime};base64,${image.toString("base64")}`;
-    } catch (error) {
-      logger?.error("Unable to load client logo", { error: String(error) });
-    }
+    } catch (error) { logger?.error("Unable to load client logo", { error: String(error) }); }
   }
   return { businessName: clientConfig.CLIENT_BUSINESS_NAME, installationDate: clientConfig.INSTALLATION_DATE, logoPath, logoDataUrl, configPath: clientConfig.CONFIG_PATH };
 }
@@ -120,6 +119,7 @@ app.whenReady().then(async () => {
   logger = initializeLogging();
   await initializeLocalRuntime();
   registerIpcHandlers();
+  if (databasePool) registerSecurityIpc(ipcMain, { pool: databasePool, userDataPath: app.getPath("userData"), logger });
   createWindow();
 });
 
