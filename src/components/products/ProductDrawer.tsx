@@ -1,16 +1,13 @@
 import "./ProductDrawer.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { Barcode, ImagePlus, Layers3, MapPin, QrCode, Save, Trash2, X, Plus, Minus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import JsBarcode from "jsbarcode";
 import type { InventoryItem, ProductUnitVariant } from "../../modules/inventory/types/InventoryItem";
 import { requireDesktopApi, type UnitType } from "../../lib/desktopApi";
-
-function money(value:number){return `₦${Math.max(0,value).toLocaleString("en-NG")}`;}
 type Props={product:InventoryItem|null;onClose:()=>void;onSave:(product:InventoryItem)=>Promise<void>;onDelete:(id:string)=>Promise<void>};
 const fallbackUnits=["PCS","PACKET","DOZEN","CARTON","BOX","BAG","BOTTLE","CAN","KG","G","L","ML"];
-
 export default function ProductDrawer({product,onClose,onSave,onDelete}:Props){
  const [draft,setDraft]=useState<InventoryItem|null>(product); const [saving,setSaving]=useState(false); const [qr,setQr]=useState(""); const [units,setUnits]=useState<UnitType[]>([]); const [barcodeRef]=useState(()=>({current:null as SVGSVGElement|null}));
  useEffect(()=>setDraft(product),[product]);
