@@ -22,8 +22,6 @@ const DEFAULT_CONFIG = {
 function readJsonFile(filePath) {
   if (!fs.existsSync(filePath)) return null;
   try {
-    // Windows PowerShell 5.1 commonly writes UTF-8 JSON with a BOM.
-    // JSON.parse does not accept that leading character, so normalize it.
     const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
     return JSON.parse(raw);
   } catch (error) {
@@ -37,23 +35,33 @@ function readJsonFile(filePath) {
 
 export function loadClientConfig(userDataPath) {
   const explicitPath = process.env.ABLECT_CLIENT_CONFIG_PATH;
-  const candidates = [
-    explicitPath,
-    path.join(userDataPath, "client-config.json"),
-    path.join(process.cwd(), "client-config.json"),
-  ].filter(Boolean);
-  const configPath = candidates.find((candidate) => fs.existsSync(candidate));
-  const fileConfig = configPath ? readJsonFile(configPath) : null;
   const isDevelopment = process.defaultApp === true;
+
+  // During development, the project config created by npm run setup:local-db
+  // must win over an old/stale config left in Electron's AppData directory.
+  // In packaged builds, AppData remains the authoritative per-client config.
+  const candidates = isDevelopment
+    ? [
+        explicitPath,
+        path.join(process.cwd(), "client-config.json"),
+        path.join(userDataPath, "client-config.json"),
+      ]
+    : [
+        explicitPath,
+        path.join(userDataPath, "client-config.json"),
+        path.join(process.cwd(), "client-config.json"),
+      ];
+
+  const configPath = candidates.filter(Boolean).find((candidate) => fs.existsSync(candidate));
+  const fileConfig = configPath ? readJsonFile(configPath) : null;
+
   const merged = {
     ...DEFAULT_CONFIG,
     ...fileConfig,
     DATABASE: {
       ...DEFAULT_CONFIG.DATABASE,
       ...(fileConfig?.DATABASE ?? {}),
-      ...(isDevelopment && !fileConfig?.DATABASE?.PASSWORD
-        ? { PASSWORD: DEV_DATABASE_PASSWORD }
-        : {}),
+      ...(isDevelopment ? { PASSWORD: DEV_DATABASE_PASSWORD } : {}),
       ...(process.env.ABLECT_DB_HOST ? { HOST: process.env.ABLECT_DB_HOST } : {}),
       ...(process.env.ABLECT_DB_PORT ? { PORT: Number(process.env.ABLECT_DB_PORT) } : {}),
       ...(process.env.ABLECT_DB_NAME ? { NAME: process.env.ABLECT_DB_NAME } : {}),
