@@ -3,12 +3,9 @@ import { useAuth } from "./AuthContext";
 import type { ReactNode } from "react";
 
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, ready } = useAuth();
   const location = useLocation();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  }
-
+  if (!ready) return <div className="grid min-h-screen place-items-center bg-[#f8fafc] text-sm font-semibold text-slate-500">Loading secure workspace…</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }

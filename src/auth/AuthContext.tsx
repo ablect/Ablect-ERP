@@ -1,83 +1,55 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { desktopApi } from "../lib/desktopApi";
 
-const SESSION_KEY = "ablect-erp-session";
-
-export type AuthUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-};
-
-type AuthContextValue = {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-};
-
+const TOKEN_KEY = "ablect-erp-session-token";
+export type AuthUser = { id: string; name: string; email: string; role: string; roleId: string | null; permissions: { module: string; view: boolean; create: boolean; edit: boolean; delete: boolean }[] };
+type AuthContextValue = { user: AuthUser | null; isAuthenticated: boolean; ready: boolean; login: (identifier: string, password: string) => Promise<void>; logout: () => Promise<void>; can: (module: string, action?: "view" | "create" | "edit" | "delete") => boolean };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function readSession(): AuthUser | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as AuthUser) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(readSession);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [ready, setReady] = useState(false);
 
-  async function login(email: string, password: string) {
-    const normalizedEmail = email.trim().toLowerCase();
+  useEffect(() => {
+    const api = desktopApi();
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!api || !token) { setReady(true); return; }
+    void api.auth.validate(token).then((sessionUser) => {
+      setUser(sessionUser);
+      if (!sessionUser) localStorage.removeItem(TOKEN_KEY);
+    }).catch(() => localStorage.removeItem(TOKEN_KEY)).finally(() => setReady(true));
+  }, []);
 
-    if (!normalizedEmail || !password) {
-      throw new Error("Enter your email and password.");
-    }
-
-    // Temporary local authentication for the desktop prototype.
-    // Replace this with the real user/authentication service when the backend is connected.
-    if (normalizedEmail !== "admin@ablect.local" || password !== "admin1234") {
-      throw new Error("Invalid login details.");
-    }
-
-    const nextUser: AuthUser = {
-      id: "local-admin",
-      name: "ABLECT Administrator",
-      email: normalizedEmail,
-      role: "Administrator",
-    };
-
-    localStorage.setItem(SESSION_KEY, JSON.stringify(nextUser));
-    setUser(nextUser);
+  async function login(identifier: string, password: string) {
+    const api = desktopApi();
+    if (!api) throw new Error("Start Ablect Business Suite through the desktop application.");
+    if (!identifier.trim() || !password) throw new Error("Enter your username/email and password.");
+    const session = await api.auth.login(identifier.trim(), password);
+    localStorage.setItem(TOKEN_KEY, session.token);
+    setUser(session.user);
   }
 
-  function logout() {
-    localStorage.removeItem(SESSION_KEY);
+  async function logout() {
+    const api = desktopApi();
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (api && token) await api.auth.logout(token).catch(() => undefined);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }
 
-  const value = useMemo(
-    () => ({
-      user,
-      isAuthenticated: Boolean(user),
-      login,
-      logout,
-    }),
-    [user],
-  );
+  function can(module: string, action: "view" | "create" | "edit" | "delete" = "view") {
+    if (!user) return false;
+    if (user.role.toLowerCase() === "administrator") return true;
+    const permission = user.permissions.find((item) => item.module === module);
+    return Boolean(permission?.[action]);
+  }
 
+  const value = useMemo(() => ({ user, isAuthenticated: Boolean(user), ready, login, logout, can }), [user, ready]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider.");
-  }
-
+  if (!context) throw new Error("useAuth must be used inside AuthProvider.");
   return context;
 }

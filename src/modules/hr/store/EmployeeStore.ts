@@ -1,45 +1,13 @@
-import { create }
+import { create } from "zustand";
 
-from "zustand";
+import type { Employee } from "../types/Employee";
 
-import type {
-
-Employee
-
-}
-
-from "../types/Employee";
-
-type EmployeeState={
-
-employees:Employee[];
-
-setEmployees:(
-
-employees:Employee[],
-
-)=>void;
-
+type EmployeeState = {
+  employees: Employee[];
+  setEmployees: (employees: Employee[]) => void;
 };
 
-export const useEmployeeStore=
-
-create<EmployeeState>((set)=>({
-
-employees:[],
-
-setEmployees(
-
-employees,
-
-){
-
-set({
-
-employees,
-
-});
-
-},
-
+export const useEmployeeStore = create<EmployeeState>((set) => ({
+  employees: [],
+  setEmployees: (employees) => set({ employees }),
 }));

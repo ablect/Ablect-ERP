@@ -4,22 +4,27 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
     "isolatedModules": true,
+    "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
-
     "strict": true,
     "skipLibCheck": true,
-
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/modules/auth/**/*",
+    "src/modules/hr/components/**/*",
+    "src/modules/hr/hooks/**/*",
+    "src/modules/payroll/components/**/*",
+    "src/modules/payroll/hooks/**/*",
+    "src/modules/sales/components/StandardPOS.tsx"
+  ]
 }

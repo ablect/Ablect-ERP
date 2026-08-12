@@ -1,51 +1,38 @@
-import db from "./db.js";
+import fs from "node:fs/promises";
 
-export function initializeDatabase() {
+/**
+ * Initialize one or more additive SQL schema files inside a single transaction.
+ *
+ * Every statement is parameter-free DDL/seed SQL owned by the application.
+ * Files are executed in the order supplied so foreign-key dependencies are
+ * created safely (base tables first, integrated ERP tables second).
+ */
+export async function initializeDatabase(pool, schemaPaths) {
+  const paths = Array.isArray(schemaPaths) ? schemaPaths : [schemaPaths];
+  const statements = [];
 
-db.exec(`
+  for (const schemaPath of paths) {
+    const sql = await fs.readFile(schemaPath, "utf8");
+    statements.push(
+      ...sql
+        .split(/;\s*(?:\r?\n|$)/)
+        .map((statement) => statement.trim())
+        .filter(Boolean),
+    );
+  }
 
-CREATE TABLE IF NOT EXISTS users(
-
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-username TEXT UNIQUE,
-
-password TEXT,
-
-fullname TEXT,
-
-role TEXT,
-
-createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-
-);
-
-CREATE TABLE IF NOT EXISTS products(
-
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-barcode TEXT UNIQUE,
-
-name TEXT NOT NULL,
-
-category TEXT,
-
-unit TEXT,
-
-costPrice REAL,
-
-sellingPrice REAL,
-
-quantity INTEGER DEFAULT 0,
-
-minimumStock INTEGER DEFAULT 5,
-
-createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-
-);
-
-`);
-
-console.log("Database initialized.");
-
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    for (const statement of statements) {
+      await connection.query(statement);
+    }
+    await connection.commit();
+    console.log(`MySQL database initialized (${statements.length} statements).`);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }

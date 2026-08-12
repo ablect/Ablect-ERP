@@ -1,26 +1,12 @@
-export interface CustomerReceipt{
+import { create } from "zustand";
+import type { CustomerReceipt } from "../types/CustomerReceipt";
 
-id:string;
+type CustomerReceiptState = {
+  receipts: CustomerReceipt[];
+  setReceipts: (receipts: CustomerReceipt[]) => void;
+};
 
-receiptNumber:string;
-
-invoiceId:string;
-
-customerId:string;
-
-receiptDate:string;
-
-amount:number;
-
-method:
-|"Cash"
-|"Bank Transfer"
-|"Cheque"
-|"POS"
-|"Mobile Money";
-
-reference:string;
-
-remarks:string;
-
-}
+export const useCustomerReceiptStore = create<CustomerReceiptState>((set) => ({
+  receipts: [],
+  setReceipts: (receipts) => set({ receipts }),
+}));
