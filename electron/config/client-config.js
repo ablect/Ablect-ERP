@@ -22,7 +22,10 @@ const DEFAULT_CONFIG = {
 function readJsonFile(filePath) {
   if (!fs.existsSync(filePath)) return null;
   try {
-    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+    // Windows PowerShell 5.1 commonly writes UTF-8 JSON with a BOM.
+    // JSON.parse does not accept that leading character, so normalize it.
+    const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
+    return JSON.parse(raw);
   } catch (error) {
     if (process.defaultApp) {
       console.warn(`Ignoring invalid development client configuration at ${filePath}: ${error.message}`);
